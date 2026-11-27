@@ -5,11 +5,19 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import '@/lib/webAlert';
 import { queryClient } from '@/lib/queryClient';
 import { useSession } from '@/store/session';
+import { useColors } from '@/ui/theme';
 SplashScreen.preventAutoHideAsync();
+/** Navigation chrome in the brand / company colours (web theme). */
+const navTheme = (base, c) => ({
+  ...base,
+  colors: { ...base.colors, primary: c.primary, background: c.background, card: c.card, text: c.text, border: c.border },
+});
 export default function RootLayout() {
   const scheme = useColorScheme();
+  const c = useColors();
   const status = useSession((s) => s.status);
   const mustChangePassword = useSession((s) => s.mustChangePassword);
   const bootstrap = useSession((s) => s.bootstrap);
@@ -24,7 +32,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider value={scheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <ThemeProvider value={navTheme(scheme === 'dark' ? DarkTheme : DefaultTheme, c)}>
           <StatusBar style="auto" />
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Protected guard={!signedIn}>

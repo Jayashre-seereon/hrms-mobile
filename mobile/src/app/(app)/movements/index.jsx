@@ -1,9 +1,16 @@
-import * as DocumentPicker from 'expo-document-picker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Alert, Linking, Pressable, Text, View } from 'react-native';
 import { resolveApiUrl } from '@/api/documents';
-import { acknowledgeMyPromotion, getMyMovements, queryMyPromotion, uploadQueryAttachments } from '@/api/movements';
+import {
+  acknowledgeMyPromotion,
+  getMyMovements,
+  issuedAttachments,
+  openPromotionAttachment,
+  pickPromotionFiles,
+  queryMyPromotion,
+  uploadQueryAttachments,
+} from '@/api/movements';
 import { errorMessage } from '@/lib/api';
 import { Button, Card, ErrorText, Field, Loading, Muted, Row } from '@/ui/components';
 import { fmtDate } from '@/ui/format';
@@ -53,21 +60,20 @@ function PromotionCard({ p, onChanged }) {
     },
     onError: (e) => setError(errorMessage(e, 'Could not send the query.')),
   });
-  const pickFiles = async () => {
-    const res = await DocumentPicker.getDocumentAsync({
-      type: ['application/pdf', 'image/png', 'image/jpeg'],
-      multiple: true,
-      copyToCacheDirectory: true,
-    });
-    if (res.canceled) return;
-    const picked = res.assets
-      .filter((a) => !a.size || a.size <= 5 * 1024 * 1024)
-      .slice(0, 5)
-      .map((a) => ({ uri: a.uri, name: a.name, type: a.mimeType ?? 'application/octet-stream' }));
-    if (picked.length < res.assets.length)
-      Alert.alert('Attachments', 'Up to 5 files, 5 MB each. Some files were skipped.');
-    setFiles(picked);
+  const pickFiles = async () => setFiles(await pickPromotionFiles(files));
+  const openFile = async (file) => {
+    try {
+      await openPromotionAttachment(String(p.id), file);
+    } catch (e) {
+      Alert.alert('Attachment', errorMessage(e, 'Could not open the file.'));
+    }
   };
+  const fileLink = (file, i) => (
+    <Pressable key={`${file.url ?? file.name}-${i}`} onPress={() => openFile(file)}>
+      <Text style={{ color: c.primary }}>📎 {file.name}</Text>
+    </Pressable>
+  );
+  const issued = issuedAttachments(p);
   const letterUrl = resolveApiUrl(p.letter_file_url);
   return (
     <Card>
@@ -85,6 +91,7 @@ function PromotionCard({ p, onChanged }) {
       <View>
         <Row label="New pay grade" value={p.to_grade || 'No change'} />
         <Row label="New annual CTC" value={money(p.to_ctc)} />
+        <Row label="Revision" value={String(p.revision || 1)} />
         <Row
           label="Your response"
           value={isAccepted ? 'Accepted' : queryPending ? 'Query sent to HR' : 'Please respond'}
@@ -97,13 +104,17 @@ function PromotionCard({ p, onChanged }) {
           <Text style={{ color: c.primary }}>Open attached letter</Text>
         </Pressable>
       ) : null}
+      {issued.length ? <View style={{ gap: 4 }}>{issued.map(fileLink)}</View> : null}
       {Array.isArray(p.query_history) && p.query_history.length ? (
         <View style={{ gap: 6 }}>
           {p.query_history.map((q, i) => (
-            <Muted key={i}>
-              {q.type === 'QUERY' ? 'Your query' : 'HR response'}
-              {q.at ? ` · ${new Date(q.at).toLocaleString()}` : ''}: {q.description || q.reply}
-            </Muted>
+            <View key={i} style={{ gap: 2 }}>
+              <Muted>
+                {q.type === 'QUERY' ? 'Your query' : 'HR response'}
+                {q.at ? ` · ${new Date(q.at).toLocaleString()}` : ''}: {q.description || q.reply}
+              </Muted>
+              {Array.isArray(q.attachments) ? q.attachments.map(fileLink) : null}
+            </View>
           ))}
         </View>
       ) : null}

@@ -6,12 +6,14 @@ import { getMyPunches, getTodayStatus, punchIn, punchOut } from '@/api/attendanc
 import { errorMessage } from '@/lib/api';
 import { Button, Card, ErrorText, Loading, Muted, Screen, Title } from '@/ui/components';
 import { fmtDate, fmtTime } from '@/ui/format';
+import { isNoEmployeeProfile, NoEmployeeProfile } from '@/ui/NoEmployeeProfile';
 import { useColors } from '@/ui/theme';
 const QUICK_LINKS = [
   { label: 'Regularise', href: '/attendance/regularisation', icon: 'time-outline' },
   { label: 'Corrections', href: '/attendance/corrections', icon: 'create-outline' },
   { label: 'Comp-off', href: '/attendance/comp-off', icon: 'swap-horizontal-outline' },
   { label: 'Timesheets', href: '/timesheets', icon: 'document-text-outline' },
+  { label: 'History', href: '/attendance/history', icon: 'calendar-outline' },
 ];
 export default function AttendanceScreen() {
   const c = useColors();
@@ -49,6 +51,8 @@ export default function AttendanceScreen() {
         <Muted>{now.toDateString()}</Muted>
         {today.isLoading ? (
           <Loading />
+        ) : isNoEmployeeProfile(today.error) ? (
+          <NoEmployeeProfile />
         ) : today.error ? (
           <ErrorText>{errorMessage(today.error, 'Could not load today’s status.')}</ErrorText>
         ) : (

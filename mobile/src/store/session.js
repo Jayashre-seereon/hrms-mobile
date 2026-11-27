@@ -4,6 +4,7 @@ import { setApiHandlers } from '@/lib/api';
 import { readJSON, writeJSON } from '@/lib/persist';
 import { queryClient } from '@/lib/queryClient';
 import { isSuperAdminRole, setScopeContext } from '@/lib/scope';
+import { API_URL } from '@/lib/config';
 import { tokens } from '@/lib/tokens';
 /** Super Admin company being worked in (web: seereon.scope.company.v1) + the role, so the scope applies on app start. */
 const SCOPE_KEY = 'hrms.scope.company.v1';
@@ -66,7 +67,17 @@ export const useSession = create((set, get) => ({
     }
     set({ status: 'signedIn', me, mustChangePassword: mustChange || Boolean(me?.must_change_password) });
   },
+  /** Like the web: tell the backend to revoke this device's session (fire and forget), then drop everything locally. */
   async signOut() {
+    const access = tokens.getAccess();
+    if (access) {
+      // Plain fetch (not the api client) so a 401 here never triggers the refresh/sign-out interceptor again.
+      fetch(`${API_URL}/auth/logout`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${access}` },
+        keepalive: true,
+      }).catch(() => {});
+    }
     await tokens.clear();
     setScopeContext({ role: '', companyId: '' });
     await writeJSON(SCOPE_KEY, null);

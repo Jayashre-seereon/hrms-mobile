@@ -44,8 +44,7 @@ async function refreshAccessToken() {
   return data.access_token;
 }
 export function errorDetail(error) {
-  const e = error;
-  const detail = e.response?.data?.detail;
+  const detail = error?.response?.data?.detail;
   if (typeof detail === 'string') return detail;
   if (Array.isArray(detail))
     return detail
@@ -57,7 +56,13 @@ export function errorDetail(error) {
 /** A message that can be shown to the user. */
 export function errorMessage(error, fallback = 'Something went wrong. Please try again.') {
   const e = error;
-  if (!e.response) return 'Cannot reach the server. Check your connection and try again.';
+  if (!e) return fallback;
+  // Network failure (request sent, no answer) vs. a plain JS error thrown by our own code.
+  if (!e.response) {
+    return e.isAxiosError || e.request
+      ? 'Cannot reach the server. Check your connection and try again.'
+      : e.message || fallback;
+  }
   const userMessage = e.userMessage;
   return userMessage || errorDetail(error) || fallback;
 }

@@ -36,3 +36,21 @@ export const getMyCompOffSummary = async () => {
 };
 export const submitCompOffRedemption = async (body) => (await api.post('/leave/compoff/redemptions', body)).data;
 export const withdrawCompOffRedemption = async (id) => (await api.delete(`/leave/compoff/redemptions/${id}`)).data;
+// ── My attendance extras (web MyAttendanceView) ──
+/** GET /attendance/my-calendar?month&year → { period, days: { 'YYYY-MM-DD': 'P'|'A'|'L'|'WO'|'H'|'MP'|'' } }. */
+export const getMyCalendar = async (month, year) =>
+  (await api.get(`${BASE}/my-calendar`, { params: { ...(month ? { month } : {}), ...(year ? { year } : {}) } })).data;
+/** GET /attendance/my-monthly-history?limit=6 → items [{ month, present, absent, leave, overtime }]. */
+export const getMyMonthlyHistory = async (limit = 6) =>
+  itemsOf((await api.get(`${BASE}/my-monthly-history`, { params: { limit } })).data);
+/** GET /attendance/register?view=month&month&year → { days: [{ date, weekday, status, in_time, out_time, hours, ... }], totals }. */
+export const getMyRegister = async ({ view = 'month', date, month, year } = {}) =>
+  (
+    await api.get(`${BASE}/register`, {
+      params: { view, ...(date ? { date } : {}), ...(month ? { month } : {}), ...(year ? { year } : {}) },
+    })
+  ).data;
+/** GET /attendance/devices — biometric devices for the "Biometric device" punch source. */
+export const getDevices = async () => itemsOf((await api.get(`${BASE}/devices`)).data);
+/** DELETE /attendance/punches/{id} — only a punch from today, and not in a locked month (server-enforced). */
+export const deleteTodayPunch = async (punchId) => (await api.delete(`${BASE}/punches/${punchId}`)).data;

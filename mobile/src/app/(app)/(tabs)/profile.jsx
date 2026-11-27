@@ -1,4 +1,4 @@
-import { Alert, RefreshControl, Text, View } from 'react-native';
+import { RefreshControl, Text, View } from 'react-native';
 import { useState } from 'react';
 import { displayName, profileOf, useSession } from '@/store/session';
 import { Button, Card, Muted, Row, Screen } from '@/ui/components';
@@ -22,11 +22,6 @@ export default function ProfileScreen() {
       setRefreshing(false);
     }
   };
-  const confirmSignOut = () =>
-    Alert.alert('Sign out', 'Do you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: signOut },
-    ]);
   return (
     <Screen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
       <View style={{ alignItems: 'center', gap: 8, marginTop: 16 }}>
@@ -54,7 +49,7 @@ export default function ProfileScreen() {
         <Row label="Role" value={p.role} />
       </Card>
 
-      <Button title="Sign out" variant="outline" onPress={confirmSignOut} />
+      <Button title="Sign out" variant="outline" onPress={signOut} />
     </Screen>
   );
 }

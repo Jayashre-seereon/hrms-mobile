@@ -409,6 +409,32 @@ export const MASTER_GROUPS = [
   'Assets',
   'Recognition',
 ];
+/**
+ * Backend module that guards each master's API (app/api/v1/router.py → require_module). A master whose module is
+ * not enabled for the company answers 403 "Module not enabled", so the menu hides it (web: permitted_modules).
+ * null = no module guard (always shown).
+ */
+const GROUP_MODULE = {
+  Organisation: ['employee'],
+  'Leave & holidays': ['leave'],
+  Attendance: ['attendance'],
+  Payroll: ['payroll'],
+  Performance: ['performance'],
+  Recruitment: ['recruitment'],
+  Assets: ['assets'],
+  Recognition: ['engagement'],
+};
+const KEY_MODULE = {
+  branches: null,
+  'holiday-calendars': ['attendance', 'leave'],
+  'onboarding-checklists': ['employee'],
+  'onboarding-documents': ['employee'],
+  'termination-types': ['exit'],
+  'warning-types': ['employee'],
+  'complaint-types': ['helpdesk'],
+};
+export const masterModules = (m) => (m.key in KEY_MODULE ? KEY_MODULE[m.key] : (GROUP_MODULE[m.group] ?? null));
+
 export const rowId = (m, row) => String(m.idOf ? m.idOf(row) : row?.id);
 export const getMaster = (key) => MASTERS.find((m) => m.key === key);
 /** Default form values for a master (new item, or from an existing row). */

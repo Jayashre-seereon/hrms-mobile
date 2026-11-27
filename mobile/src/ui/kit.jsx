@@ -19,7 +19,8 @@ import {
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { errorMessage } from '@/lib/api';
-import { Card, ErrorText, Loading, Muted } from './components';
+import { Card, ErrorText, Muted } from './components';
+import { SkeletonCard } from './dashboard';
 import { useColors } from './theme';
 /** Sets the header title of a stack screen. */
 export function Header({ title, right }) {
@@ -57,7 +58,11 @@ export function QueryList({ query, renderItem, keyOf, empty = 'Nothing here yet.
       ListHeaderComponent={header}
       ListEmptyComponent={
         query.isLoading ? (
-          <Loading />
+          <View style={{ gap: 12 }}>
+            <SkeletonCard lines={1} />
+            <SkeletonCard lines={1} />
+            <SkeletonCard lines={1} />
+          </View>
         ) : query.error ? (
           <ErrorText>{errorMessage(query.error, 'Could not load the list.')}</ErrorText>
         ) : (
