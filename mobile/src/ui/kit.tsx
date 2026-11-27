@@ -71,7 +71,7 @@ export function QueryList<T>({
       keyExtractor={(item: any, i) => (keyOf ? keyOf(item, i) : String(item?.id ?? i))}
       renderItem={({ item, index }) => renderItem(item, index)}
       contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
-      refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => query.refetch()} />}
+      refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => { query.refetch(); }} />}
       ListHeaderComponent={header}
       ListEmptyComponent={
         query.isLoading ? (
