@@ -8,6 +8,29 @@ import { errorMessage } from '@/lib/api';
 import { ErrorText, Field, Loading, Muted } from '@/ui/components';
 import { Badge, Header, ItemCard, Segments } from '@/ui/kit';
 import { CompanyScopeNotice } from '@/lib/CompanyScopeNotice';
+import { canBulkImportEmployees } from '@/api/admin/employees-import';
+import { useAccess } from '@/lib/access';
+import { Pressable, Text } from 'react-native';
+import { useColors } from '@/ui/theme';
+
+/** Header button that opens Bulk upload (same visibility rule as the web "Bulk Upload" button). */
+function ImportButton() {
+  const router = useRouter();
+  const c = useColors();
+  const { role, can } = useAccess();
+  // Same rule as the web "Hire employee" and "Bulk Upload" buttons (canManagePeople).
+  if (!canBulkImportEmployees(role, can)) return null;
+  return (
+    <View style={{ flexDirection: 'row', gap: 16 }}>
+      <Pressable onPress={() => router.push('/admin/employees/import')} hitSlop={10}>
+        <Text style={{ color: c.primary, fontWeight: '600', fontSize: 15 }}>Bulk upload</Text>
+      </Pressable>
+      <Pressable onPress={() => router.push('/admin/employees/new')} hitSlop={10} style={{ paddingRight: 4 }}>
+        <Text style={{ color: c.primary, fontWeight: '600', fontSize: 15 }}>Add</Text>
+      </Pressable>
+    </View>
+  );
+}
 const PAGE_SIZE = 20;
 export default function EmployeesScreen() {
   const router = useRouter();
@@ -35,7 +58,7 @@ export default function EmployeesScreen() {
   const total = q.data?.pages[0]?.total;
   return (
     <View style={{ flex: 1 }}>
-      <Header title="Employees" />
+      <Header title="Employees" right={() => <ImportButton />} />
       <FlatList
         data={rows}
         keyExtractor={(e, i) => String(e.id ?? i)}
