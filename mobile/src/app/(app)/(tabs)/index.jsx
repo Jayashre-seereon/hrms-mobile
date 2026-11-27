@@ -7,6 +7,7 @@ import { CompanySwitcherRow } from '@/lib/CompanyScopeNotice';
 import { displayName, profileOf, useSession } from '@/store/session';
 import { Button, Card, ErrorText, Loading, Muted, Screen } from '@/ui/components';
 import { fmtTime } from '@/ui/format';
+import { isNoEmployeeProfile, NoEmployeeProfile } from '@/ui/NoEmployeeProfile';
 import { useColors } from '@/ui/theme';
 function Stat({ label, value }) {
   const c = useColors();
@@ -42,45 +43,53 @@ export default function HomeScreen() {
 
       <CompanySwitcherRow />
 
-      <Card>
-        <Text style={{ fontSize: 16, fontWeight: '600', color: c.text }}>Today</Text>
-        {today.isLoading ? (
-          <Loading />
-        ) : today.error ? (
-          <ErrorText>{errorMessage(today.error, 'Could not load today’s status.')}</ErrorText>
-        ) : (
-          <>
-            <Muted>
-              {t?.is_punched_in ? `Punched in at ${fmtTime(t.active_punch?.in_time)}` : 'You have not punched in yet.'}
-            </Muted>
-            {t?.shift?.name ? (
-              <Muted>
-                Shift: {t.shift.name}
-                {t.shift.start_time ? ` (${fmtTime(t.shift.start_time)} – ${fmtTime(t.shift.end_time)})` : ''}
-              </Muted>
-            ) : null}
-          </>
-        )}
-        <Button
-          title={t?.is_punched_in ? 'Go to punch out' : 'Go to punch in'}
-          onPress={() => router.navigate('/attendance')}
-        />
-      </Card>
+      {isNoEmployeeProfile(today.error) ? (
+        <NoEmployeeProfile />
+      ) : (
+        <>
+          <Card>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: c.text }}>Today</Text>
+            {today.isLoading ? (
+              <Loading />
+            ) : today.error ? (
+              <ErrorText>{errorMessage(today.error, 'Could not load today’s status.')}</ErrorText>
+            ) : (
+              <>
+                <Muted>
+                  {t?.is_punched_in
+                    ? `Punched in at ${fmtTime(t.active_punch?.in_time)}`
+                    : 'You have not punched in yet.'}
+                </Muted>
+                {t?.shift?.name ? (
+                  <Muted>
+                    Shift: {t.shift.name}
+                    {t.shift.start_time ? ` (${fmtTime(t.shift.start_time)} – ${fmtTime(t.shift.end_time)})` : ''}
+                  </Muted>
+                ) : null}
+              </>
+            )}
+            <Button
+              title={t?.is_punched_in ? 'Go to punch out' : 'Go to punch in'}
+              onPress={() => router.navigate('/attendance')}
+            />
+          </Card>
 
-      <Card>
-        <Text style={{ fontSize: 16, fontWeight: '600', color: c.text }}>This month</Text>
-        {summary.isLoading ? (
-          <Loading />
-        ) : summary.error ? (
-          <ErrorText>{errorMessage(summary.error, 'Could not load the attendance summary.')}</ErrorText>
-        ) : (
-          <View style={{ flexDirection: 'row' }}>
-            <Stat label="Present" value={summary.data?.present_days} />
-            <Stat label="Absent" value={summary.data?.absent_days} />
-            <Stat label="Leave" value={summary.data?.leave_days} />
-          </View>
-        )}
-      </Card>
+          <Card>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: c.text }}>This month</Text>
+            {summary.isLoading ? (
+              <Loading />
+            ) : summary.error ? (
+              <ErrorText>{errorMessage(summary.error, 'Could not load the attendance summary.')}</ErrorText>
+            ) : (
+              <View style={{ flexDirection: 'row' }}>
+                <Stat label="Present" value={summary.data?.present_days} />
+                <Stat label="Absent" value={summary.data?.absent_days} />
+                <Stat label="Leave" value={summary.data?.leave_days} />
+              </View>
+            )}
+          </Card>
+        </>
+      )}
     </Screen>
   );
 }
