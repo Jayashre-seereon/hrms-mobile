@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { useLocalSearchParams } from 'expo-router';
-import { Linking, Text, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Linking, Pressable, Text, View } from 'react-native';
 import { personName } from '@/api/admin/common';
 import { getEmployeeById, getEmployeeDocuments } from '@/api/admin/employees';
 import { errorMessage } from '@/lib/api';
+import { useAccess } from '@/lib/access';
 import { Card, ErrorText, Loading, Muted, Row } from '@/ui/components';
 import { fmtDate, initials } from '@/ui/format';
 import { Badge, Header, Page } from '@/ui/kit';
@@ -17,10 +18,13 @@ function Section({ title, children }) {
     </>
   );
 }
-/** Read-only employee record (web: EmployeeDetail.jsx). Editing stays on the web portal. */
+/** Employee record (web: EmployeeDetail.jsx). "Edit" opens the same edit form as the web. */
 export default function EmployeeDetailScreen() {
   const c = useColors();
   const { id } = useLocalSearchParams();
+  const router = useRouter();
+  const { role, isAdmin, can } = useAccess();
+  const canEdit = role !== 'EMPLOYEE' && (isAdmin || can('employee.edit'));
   const q = useQuery({
     queryKey: ['admin', 'employee', id],
     queryFn: () => getEmployeeById(String(id)),
@@ -40,7 +44,18 @@ export default function EmployeeDetailScreen() {
         docs.refetch();
       }}
       refreshing={q.isRefetching}>
-      <Header title={q.data ? name : 'Employee'} />
+      <Header
+        title={q.data ? name : 'Employee'}
+        right={
+          canEdit && q.data
+            ? () => (
+                <Pressable onPress={() => router.push(`/admin/employees/edit?id=${encodeURIComponent(String(id))}`)} hitSlop={8}>
+                  <Text style={{ color: c.primary, fontWeight: '600', fontSize: 16 }}>Edit</Text>
+                </Pressable>
+              )
+            : undefined
+        }
+      />
       {q.isLoading ? (
         <Loading />
       ) : q.error ? (
