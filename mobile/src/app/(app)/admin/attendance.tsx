@@ -5,11 +5,11 @@ import { Text, View } from 'react-native';
 import { ATTENDANCE_STATUS, getAttendanceSummary, getDailyAttendance } from '@/api/admin/attendance';
 import { personName } from '@/api/admin/common';
 import { errorMessage } from '@/lib/api';
-import { useAccess } from '@/lib/access';
 import { Card, ErrorText, Field, Loading, Muted } from '@/ui/components';
 import { fmtTime } from '@/ui/format';
 import { Badge, DateField, Header, ItemCard, Page, toISODate } from '@/ui/kit';
 import { useColors } from '@/ui/theme';
+import { CompanyScopeNotice } from '@/lib/CompanyScopeNotice';
 
 const hours = (v: unknown) => (v == null || v === '' ? '—' : `${Number(v).toFixed(1)}h`);
 const toneOf = (s?: string) =>
@@ -27,8 +27,7 @@ function Stat({ label, value }: { label: string; value?: number | string | null 
 
 /** Admin daily attendance for every employee in scope (web: EmployeeAttendanceTab, daily view). */
 export default function AdminAttendanceScreen() {
-  const { isSuperAdmin } = useAccess();
-  const [date, setDate] = useState(toISODate(new Date()));
+    const [date, setDate] = useState(toISODate(new Date()));
   const [search, setSearch] = useState('');
 
   const list = useQuery({ queryKey: ['admin', 'attendance', 'daily', date], queryFn: () => getDailyAttendance({ date }) });
@@ -49,7 +48,7 @@ export default function AdminAttendanceScreen() {
       }}
       refreshing={list.isRefetching || summary.isRefetching}>
       <Header title="Employee attendance" />
-      {isSuperAdmin ? <Muted>Use the web portal to pick a company.</Muted> : null}
+      <CompanyScopeNotice />
       <DateField label="Date" value={date} onChange={setDate} />
 
       <Card>

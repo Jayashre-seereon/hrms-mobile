@@ -2,8 +2,8 @@ import { Href, useRouter } from 'expo-router';
 import { Text } from 'react-native';
 
 import { MASTER_GROUPS, MASTERS } from '@/features/masters/registry';
-import { useAccess } from '@/lib/access';
-import { Card, Muted } from '@/ui/components';
+import { CompanyScopeNotice } from '@/lib/CompanyScopeNotice';
+import { Card } from '@/ui/components';
 import { Header, MenuRow, Page } from '@/ui/kit';
 import { useColors } from '@/ui/theme';
 
@@ -11,12 +11,11 @@ import { useColors } from '@/ui/theme';
 export default function MastersMenu() {
   const c = useColors();
   const router = useRouter();
-  const { isSuperAdmin } = useAccess();
 
   return (
     <Page>
       <Header title="Masters" />
-      {isSuperAdmin ? <Muted>Use the web portal to pick a company.</Muted> : null}
+      <CompanyScopeNotice />
       {MASTER_GROUPS.map((group) => {
         const items = MASTERS.filter((m) => m.group === group);
         if (!items.length) return null;
@@ -29,13 +28,12 @@ export default function MastersMenu() {
                 icon="layers-outline"
                 label={m.title}
                 hint={m.readOnly ? 'View only' : undefined}
-                onPress={() => router.push(`/admin/masters/${m.key}` as Href)}
+                onPress={() => router.push((m.href ?? `/admin/masters/${m.key}`) as Href)}
               />
             ))}
           </Card>
         );
       })}
-      <Muted>Leave types, holiday calendars, pay grades, branches, awards and performance masters are managed on the web portal.</Muted>
     </Page>
   );
 }

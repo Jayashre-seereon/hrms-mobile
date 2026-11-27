@@ -8,9 +8,9 @@ import { rowsOf, unwrap } from './common';
  * Company / branch scope comes from the token (same as web, where scope IDs are only query params).
  */
 
-export async function listMaster(endpoint: string, listParams?: Record<string, any>) {
+export async function listMaster(endpoint: string, listParams?: Record<string, any>, listKeys: string[] = []) {
   const { data } = await api.get(endpoint, { params: listParams });
-  return rowsOf(data);
+  return rowsOf(data, ...listKeys);
 }
 
 export async function getMasterItem(endpoint: string, id: string) {
@@ -24,6 +24,15 @@ export async function createMasterItem(endpoint: string, body: Record<string, an
 
 export async function updateMasterItem(endpoint: string, id: string, body: Record<string, any>) {
   return unwrap((await api.put(`${endpoint}/${encodeURIComponent(id)}`, body)).data);
+}
+
+export async function patchMasterItem(endpoint: string, id: string, body: Record<string, any>) {
+  return unwrap((await api.patch(`${endpoint}/${encodeURIComponent(id)}`, body)).data);
+}
+
+/** PATCH {endpoint}/{id}{suffix} — e.g. assessment parameter `/status` with { is_active }. */
+export async function patchMasterSub(endpoint: string, id: string, suffix: string, body: Record<string, any>) {
+  return unwrap((await api.patch(`${endpoint}/${encodeURIComponent(id)}${suffix}`, body)).data);
 }
 
 export async function deleteMasterItem(endpoint: string, id: string) {
@@ -45,4 +54,16 @@ export async function loadOptions(endpoint: string, labelKey: string, valueKey =
           },
     )
     .filter((o) => o.label && o.value);
+}
+
+/** Dropdown of plain names (web leaveMasterAdapters.optionNames): strings or objects with name / label / value. */
+export async function loadNameOptions(endpoint: string, params?: Record<string, any>) {
+  const { data } = await api.get(endpoint, { params });
+  const d = unwrap(data);
+  const rows: any[] = Array.isArray(d) ? d : (d?.items ?? d?.results ?? d?.data ?? []);
+  return rows
+    .map((o) => (typeof o === 'string' ? o : (o?.name ?? o?.label ?? o?.value ?? o?.credit ?? o?.approval_chain ?? '')))
+    .map((s) => String(s ?? '').trim())
+    .filter(Boolean)
+    .map((s) => ({ label: s, value: s }));
 }

@@ -6,16 +6,15 @@ import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native'
 import { personName } from '@/api/admin/common';
 import { getEmployees } from '@/api/admin/employees';
 import { errorMessage } from '@/lib/api';
-import { useAccess } from '@/lib/access';
 import { ErrorText, Field, Loading, Muted } from '@/ui/components';
 import { Badge, Header, ItemCard, Segments } from '@/ui/kit';
+import { CompanyScopeNotice } from '@/lib/CompanyScopeNotice';
 
 const PAGE_SIZE = 20;
 
 export default function EmployeesScreen() {
   const router = useRouter();
-  const { isSuperAdmin } = useAccess();
-  const [text, setText] = useState('');
+    const [text, setText] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
 
@@ -55,7 +54,7 @@ export default function EmployeesScreen() {
         }}
         ListHeaderComponent={
           <View style={{ gap: 12 }}>
-            {isSuperAdmin ? <Muted>Use the web portal to pick a company.</Muted> : null}
+            <CompanyScopeNotice />
             <Field label="Search" value={text} onChangeText={setText} placeholder="Name, email or employee ID" autoCapitalize="none" />
             <Segments
               value={status}

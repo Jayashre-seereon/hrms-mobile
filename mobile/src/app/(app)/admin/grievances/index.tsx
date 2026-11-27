@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { getGrievanceStats, GRIEVANCE_STATUSES, listGrievances } from '@/api/admin/grievances';
+import { CompanyScopeNotice } from '@/lib/CompanyScopeNotice';
 import { Card, Field, Muted } from '@/ui/components';
 import { fmtDate } from '@/ui/format';
 import { Badge, Header, ItemCard, QueryList, Select } from '@/ui/kit';
@@ -42,6 +43,7 @@ export default function GrievancesScreen() {
         empty="No grievances."
         header={
           <View style={{ gap: 12, marginBottom: 4 }}>
+            <CompanyScopeNotice />
             <Card style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
               {[
                 ['Open', s.totalOpen],

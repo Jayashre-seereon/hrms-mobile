@@ -3,6 +3,7 @@ import { Href, useRouter } from 'expo-router';
 import { Text } from 'react-native';
 
 import { useAccess } from '@/lib/access';
+import { CompanySwitcherRow } from '@/lib/CompanyScopeNotice';
 import { Card, Screen, Title } from '@/ui/components';
 import { MenuRow } from '@/ui/kit';
 import { useColors } from '@/ui/theme';
@@ -32,6 +33,7 @@ export default function MoreScreen() {
   return (
     <Screen>
       <Title>More</Title>
+      <CompanySwitcherRow />
 
       <Section
         title="Time & attendance"

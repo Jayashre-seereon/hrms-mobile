@@ -3,9 +3,9 @@ import { Href, useRouter } from 'expo-router';
 import { View } from 'react-native';
 
 import { listPayrollRuns } from '@/api/admin/payroll';
-import { useAccess } from '@/lib/access';
 import { Muted } from '@/ui/components';
 import { Badge, Header, ItemCard, QueryList } from '@/ui/kit';
+import { CompanyScopeNotice } from '@/lib/CompanyScopeNotice';
 
 const money = (v: unknown) =>
   v == null || v === '' || Number.isNaN(Number(v)) ? '—' : `₹${Math.round(Number(v)).toLocaleString('en-IN')}`;
@@ -13,8 +13,7 @@ const money = (v: unknown) =>
 /** Payroll runs list (web: PayrollRunsTab.jsx). Creating / processing runs stays on the web portal. */
 export default function PayrollRunsScreen() {
   const router = useRouter();
-  const { isSuperAdmin } = useAccess();
-  const q = useQuery({ queryKey: ['admin', 'payroll-runs'], queryFn: () => listPayrollRuns() });
+    const q = useQuery({ queryKey: ['admin', 'payroll-runs'], queryFn: () => listPayrollRuns() });
 
   return (
     <View style={{ flex: 1 }}>
@@ -24,7 +23,7 @@ export default function PayrollRunsScreen() {
         empty="No payroll runs yet."
         header={
           <View style={{ gap: 4, marginBottom: 4 }}>
-            {isSuperAdmin ? <Muted>Use the web portal to pick a company.</Muted> : null}
+            <CompanyScopeNotice />
             <Muted>Create, check and process runs on the web portal. Approvers can approve here.</Muted>
           </View>
         }

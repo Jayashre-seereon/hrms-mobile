@@ -7,6 +7,7 @@ import { useAccess } from '@/lib/access';
 import { Card, Muted } from '@/ui/components';
 import { Badge, Header, MenuRow, Page, toISODate } from '@/ui/kit';
 import { useColors } from '@/ui/theme';
+import { CompanyScopeNotice } from '@/lib/CompanyScopeNotice';
 
 function Kpi({ label, value, hint }: { label: string; value?: number | string | null; hint?: string | null }) {
   const c = useColors();
@@ -23,7 +24,7 @@ const money = (v?: number | null) => (v == null ? '—' : `₹${Math.round(v).to
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { isSuperAdmin, hasModule } = useAccess();
+  const { hasModule } = useAccess();
   const today = toISODate(new Date());
 
   // Each card loads on its own: one failing call only blanks that card (same as web).
@@ -45,7 +46,7 @@ export default function AdminDashboard() {
   return (
     <Page onRefresh={onRefresh} refreshing={refreshing}>
       <Header title="Admin dashboard" />
-      {isSuperAdmin ? <Muted>Use the web portal to pick a company — figures below may be empty without one.</Muted> : null}
+      <CompanyScopeNotice message="Pick a company to see its figures — without one the cards below may be empty." />
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
         <Kpi label="Employees" value={heads.data} />

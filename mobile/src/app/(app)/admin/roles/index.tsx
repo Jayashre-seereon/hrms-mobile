@@ -3,15 +3,14 @@ import { Href, useRouter } from 'expo-router';
 import { View } from 'react-native';
 
 import { listRoles } from '@/api/admin/roles';
-import { useAccess } from '@/lib/access';
 import { Muted } from '@/ui/components';
 import { Badge, Header, ItemCard, QueryList } from '@/ui/kit';
+import { CompanyScopeNotice } from '@/lib/CompanyScopeNotice';
 
 /** Roles list, read-only (web: RolesHubWorkspace.jsx). Role editing stays on the web portal. */
 export default function RolesScreen() {
   const router = useRouter();
-  const { isSuperAdmin } = useAccess();
-  const q = useQuery({ queryKey: ['admin', 'roles'], queryFn: listRoles });
+    const q = useQuery({ queryKey: ['admin', 'roles'], queryFn: listRoles });
 
   return (
     <View style={{ flex: 1 }}>
@@ -21,7 +20,7 @@ export default function RolesScreen() {
         empty="No roles found."
         header={
           <View style={{ gap: 4, marginBottom: 4 }}>
-            {isSuperAdmin ? <Muted>Use the web portal to pick a company.</Muted> : null}
+            <CompanyScopeNotice />
             <Muted>View only — create and edit roles on the web portal.</Muted>
           </View>
         }

@@ -57,3 +57,17 @@ export function useAccess() {
     hasModule: (module: string) => hasModule(me, module),
   };
 }
+
+/** Super Admin company scope (web: CompanySwitcher). `needsCompany` = Super Admin with no company picked. */
+export function useScope() {
+  const me = useSession((s) => s.me);
+  const companyId = useSession((s) => s.scopeCompanyId);
+  const companyName = useSession((s) => s.scopeCompanyName);
+  const superAdmin = isSuperAdmin(me);
+  return {
+    isSuperAdmin: superAdmin,
+    companyId,
+    companyName,
+    needsCompany: superAdmin && !companyId,
+  };
+}

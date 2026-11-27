@@ -9,6 +9,8 @@
  *   features/exit/data/terminationTypeAdapter.js, features/assets/data/assetMasterAdapter.js
  */
 
+import { EXTRA_MASTERS } from './extra-masters';
+
 export type FieldType = 'text' | 'textarea' | 'number' | 'select' | 'boolean' | 'date' | 'time';
 
 export type MasterField = {
@@ -17,10 +19,16 @@ export type MasterField = {
   type?: FieldType;
   required?: boolean;
   placeholder?: string;
-  /** Static options for type "select". */
-  options?: string[];
+  /** Static options for type "select" (plain values, or label / value pairs). */
+  options?: (string | { label: string; value: string })[];
+  /** Must not repeat (case-insensitive) among the loaded rows (web: duplicate-name check). */
+  unique?: boolean;
   /** Options loaded from the API for type "select". */
-  optionsFrom?: { endpoint: string; labelKey: string; valueKey?: string };
+  optionsFrom?: { endpoint: string; labelKey: string; valueKey?: string; names?: boolean };
+  /** Shown but not editable (e.g. a server-generated code). */
+  disabled?: boolean;
+  /** Field-level rule; return an error message or "". */
+  validate?: (value: any, values: Record<string, any>) => string;
   /** Value used for a new item. */
   defaultValue?: string | boolean;
   uppercase?: boolean;
@@ -32,10 +40,16 @@ export type MasterConfig = {
   key: string;
   title: string;
   singular: string;
-  group: 'Organisation' | 'Attendance' | 'Recruitment' | 'Exit & cases' | 'Assets';
+  group: MasterGroup;
+  /** Dedicated screen instead of the generic list (e.g. holiday calendars, branches). */
+  href?: string;
   endpoint: string;
   /** Extra query params for the list call. */
   listParams?: Record<string, any>;
+  /** Extra response keys that may hold the list (e.g. "awards", "documents"). */
+  listKeys?: string[];
+  /** Line shown above the list, computed from the rows. */
+  listNote?: (rows: any[]) => string;
   /** Permission module checked for edit/delete (web: "<module>.edit|delete"). */
   module: string;
   titleOf: (row: any) => string;
@@ -44,11 +58,43 @@ export type MasterConfig = {
   fields: MasterField[];
   /** API row → form values (defaults to picking each field key from the row). */
   toForm?: (row: any) => Record<string, any>;
+  /** Values for a new item (defaults to each field's defaultValue). */
+  newForm?: () => Record<string, any>;
   /** Form values → request body (defaults to the trimmed field values). */
   toPayload?: (values: Record<string, any>) => Record<string, any>;
   readOnly?: boolean;
   canDelete?: boolean;
+  /** Form-level rules (e.g. maximum ≥ minimum). */
+  validate?: (values: Record<string, any>) => Record<string, string>;
+  /** Async step before create / update (e.g. look up an id from a name). */
+  beforeSave?: (payload: Record<string, any>) => Promise<Record<string, any>>;
+  /**
+   * How an edit is saved (web behaviour per master):
+   * - "put" (default): full body
+   * - "patch-changed": PATCH with only the changed fields (nothing sent when nothing changed)
+   * - "patch-single-else-put": PATCH when exactly one field changed, otherwise PUT
+   */
+  updateMethod?: 'put' | 'patch-changed' | 'patch-single-else-put';
+  /** Body keys never sent in a PATCH (e.g. server-generated code). */
+  patchSkip?: string[];
+  /** When DELETE fails with a matching message, offer this PATCH instead (web: leave type → deactivate). */
+  deleteFallback?: { match: RegExp; label: string; message: string; body: Record<string, any> };
+  /** Active / inactive switch on each row: PATCH {endpoint}/{id}{suffix} with { [field]: value }. */
+  statusToggle?: { suffix: string; field: string; isActive: (row: any) => boolean };
+  /** Row id (defaults to row.id). */
+  idOf?: (row: any) => string;
 };
+
+export type MasterGroup =
+  | 'Organisation'
+  | 'Leave & holidays'
+  | 'Attendance'
+  | 'Payroll'
+  | 'Performance'
+  | 'Recruitment'
+  | 'Exit & cases'
+  | 'Assets'
+  | 'Recognition';
 
 const STATUSES = ['Active', 'Inactive'];
 const t = (v: unknown) => String(v ?? '').trim();
@@ -87,7 +133,7 @@ const nameDesc = (extra: Pick<MasterConfig, 'key' | 'title' | 'singular' | 'endp
   ...extra,
 });
 
-export const MASTERS: MasterConfig[] = [
+const BASE_MASTERS: MasterConfig[] = [
   // ---------- Organisation ----------
   {
     key: 'department-grades',
@@ -360,13 +406,28 @@ export const MASTERS: MasterConfig[] = [
   },
 ];
 
-export const MASTER_GROUPS: MasterConfig['group'][] = ['Organisation', 'Attendance', 'Recruitment', 'Exit & cases', 'Assets'];
+export const MASTERS: MasterConfig[] = [...BASE_MASTERS, ...EXTRA_MASTERS];
+
+export const MASTER_GROUPS: MasterGroup[] = [
+  'Organisation',
+  'Leave & holidays',
+  'Attendance',
+  'Payroll',
+  'Performance',
+  'Recruitment',
+  'Exit & cases',
+  'Assets',
+  'Recognition',
+];
+
+export const rowId = (m: MasterConfig, row: any) => String(m.idOf ? m.idOf(row) : row?.id);
 
 export const getMaster = (key?: string) => MASTERS.find((m) => m.key === key);
 
 /** Default form values for a master (new item, or from an existing row). */
 export function formValues(m: MasterConfig, row?: any): Record<string, any> {
   if (row && m.toForm) return m.toForm(row);
+  if (!row && m.newForm) return m.newForm();
   return Object.fromEntries(
     m.fields.map((f) => {
       const v = row?.[f.key];
