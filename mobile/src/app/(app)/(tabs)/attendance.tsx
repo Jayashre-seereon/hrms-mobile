@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import { Alert, RefreshControl, Text, View } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { Href, useRouter } from 'expo-router';
+import { Alert, Pressable, RefreshControl, Text, View } from 'react-native';
 
 import { getMyPunches, getTodayStatus, punchIn, punchOut } from '@/api/attendance';
 import { errorMessage } from '@/lib/api';
@@ -8,9 +10,17 @@ import { Button, Card, ErrorText, Loading, Muted, Screen, Title } from '@/ui/com
 import { fmtDate, fmtTime } from '@/ui/format';
 import { useColors } from '@/ui/theme';
 
+const QUICK_LINKS: { label: string; href: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { label: 'Regularise', href: '/attendance/regularisation', icon: 'time-outline' },
+  { label: 'Corrections', href: '/attendance/corrections', icon: 'create-outline' },
+  { label: 'Comp-off', href: '/attendance/comp-off', icon: 'swap-horizontal-outline' },
+  { label: 'Timesheets', href: '/timesheets', icon: 'document-text-outline' },
+];
+
 export default function AttendanceScreen() {
   const c = useColors();
   const qc = useQueryClient();
+  const router = useRouter();
   const now = new Date();
   const month = now.getMonth() + 1;
   const year = now.getFullYear();
@@ -78,6 +88,28 @@ export default function AttendanceScreen() {
           </>
         )}
       </Card>
+
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        {QUICK_LINKS.map((l) => (
+          <Pressable
+            key={l.href}
+            onPress={() => router.push(l.href as Href)}
+            style={({ pressed }) => ({
+              flex: 1,
+              alignItems: 'center',
+              gap: 6,
+              paddingVertical: 12,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: c.border,
+              backgroundColor: c.card,
+              opacity: pressed ? 0.7 : 1,
+            })}>
+            <Ionicons name={l.icon} size={22} color={c.primary} />
+            <Text style={{ color: c.text, fontSize: 12, fontWeight: '500' }}>{l.label}</Text>
+          </Pressable>
+        ))}
+      </View>
 
       <Text style={{ fontSize: 16, fontWeight: '600', color: c.text }}>This month</Text>
       {punches.isLoading ? (

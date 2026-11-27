@@ -89,7 +89,11 @@ export function Field({ label, error, ...props }: TextInputProps & { label: stri
       <TextInput
         placeholderTextColor={c.muted}
         {...props}
-        style={[styles.input, { color: c.text, borderColor: error ? c.danger : c.border, backgroundColor: c.card }]}
+        style={[
+          styles.input,
+          props.multiline && { height: undefined, minHeight: 96, paddingTop: 12, textAlignVertical: 'top' },
+          { color: c.text, borderColor: error ? c.danger : c.border, backgroundColor: c.card },
+        ]}
       />
       {error ? <Text style={{ color: c.danger, fontSize: 13 }}>{error}</Text> : null}
     </View>

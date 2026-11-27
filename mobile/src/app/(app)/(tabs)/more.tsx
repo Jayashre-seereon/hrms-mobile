@@ -55,6 +55,7 @@ export default function MoreScreen() {
         title="My work"
         items={[
           { icon: 'cash-outline', label: 'My payslips', href: '/payslips' },
+          { icon: 'folder-open-outline', label: 'My documents', href: '/documents' },
           { icon: 'chatbubble-ellipses-outline', label: 'My complaints', href: '/complaints' },
           { icon: 'people-outline', label: 'My referrals', href: '/referrals' },
           { icon: 'trending-up-outline', label: 'My movements', hint: 'Promotions & transfers', href: '/movements' },
