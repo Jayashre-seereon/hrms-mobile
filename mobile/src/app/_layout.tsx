@@ -45,7 +45,7 @@ export default function RootLayout() {
               <Stack.Screen name="change-password" />
             </Stack.Protected>
             <Stack.Protected guard={signedIn && !mustChangePassword}>
-              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="(app)" />
             </Stack.Protected>
           </Stack>
         </ThemeProvider>
