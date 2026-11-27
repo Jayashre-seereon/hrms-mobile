@@ -1,0 +1,58 @@
+import { api } from '@/lib/api';
+import { rowsOf, unwrap } from './common';
+/**
+ * Generic CRUD for master data. Every master in features/masters/registry.ts is a REST
+ * collection: GET base, GET base/{id}, POST base, PUT base/{id}, DELETE base/{id}.
+ * Company / branch scope comes from the token (same as web, where scope IDs are only query params).
+ */
+export async function listMaster(endpoint, listParams, listKeys = []) {
+  const { data } = await api.get(endpoint, { params: listParams });
+  return rowsOf(data, ...listKeys);
+}
+export async function getMasterItem(endpoint, id) {
+  const { data } = await api.get(`${endpoint}/${encodeURIComponent(id)}`);
+  return unwrap(data);
+}
+export async function createMasterItem(endpoint, body) {
+  return unwrap((await api.post(endpoint, body)).data);
+}
+export async function updateMasterItem(endpoint, id, body) {
+  return unwrap((await api.put(`${endpoint}/${encodeURIComponent(id)}`, body)).data);
+}
+export async function patchMasterItem(endpoint, id, body) {
+  return unwrap((await api.patch(`${endpoint}/${encodeURIComponent(id)}`, body)).data);
+}
+/** PATCH {endpoint}/{id}{suffix} — e.g. assessment parameter `/status` with { is_active }. */
+export async function patchMasterSub(endpoint, id, suffix, body) {
+  return unwrap((await api.patch(`${endpoint}/${encodeURIComponent(id)}${suffix}`, body)).data);
+}
+export async function deleteMasterItem(endpoint, id) {
+  return (await api.delete(`${endpoint}/${encodeURIComponent(id)}`)).data;
+}
+/** Options for a select field: accepts strings or objects. */
+export async function loadOptions(endpoint, labelKey, valueKey = 'id', params) {
+  const { data } = await api.get(endpoint, { params });
+  const d = unwrap(data);
+  const rows = Array.isArray(d) ? d : (d?.items ?? d?.results ?? d?.data ?? d?.categories ?? []);
+  return rows
+    .map((o) =>
+      typeof o === 'string'
+        ? { label: o, value: o }
+        : {
+            label: String(o?.[labelKey] ?? o?.name ?? o?.label ?? o?.[valueKey] ?? ''),
+            value: String(o?.[valueKey] ?? o?.value ?? o?.[labelKey] ?? ''),
+          },
+    )
+    .filter((o) => o.label && o.value);
+}
+/** Dropdown of plain names (web leaveMasterAdapters.optionNames): strings or objects with name / label / value. */
+export async function loadNameOptions(endpoint, params) {
+  const { data } = await api.get(endpoint, { params });
+  const d = unwrap(data);
+  const rows = Array.isArray(d) ? d : (d?.items ?? d?.results ?? d?.data ?? []);
+  return rows
+    .map((o) => (typeof o === 'string' ? o : (o?.name ?? o?.label ?? o?.value ?? o?.credit ?? o?.approval_chain ?? '')))
+    .map((s) => String(s ?? '').trim())
+    .filter(Boolean)
+    .map((s) => ({ label: s, value: s }));
+}
