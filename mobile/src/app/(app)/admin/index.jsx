@@ -23,20 +23,33 @@ export default function AdminDashboard() {
   const { hasModule } = useAccess();
   const today = toISODate(new Date());
   // Each card loads on its own: one failing call only blanks that card (same as web).
-  const heads = useQuery({ queryKey: ['admin', 'dash', 'headcount'], queryFn: headcount });
-  const att = useQuery({ queryKey: ['admin', 'dash', 'attendance', today], queryFn: () => attendanceToday(today) });
+  // A card only calls its API when the module is on for the company (web: permitted_modules) — no 403s.
+  const showEmployees = hasModule('employee');
+  const showAttendance = hasModule('attendance');
+  const showPayroll = hasModule('payroll');
+  const showGrievances = hasModule('helpdesk');
+  const heads = useQuery({ queryKey: ['admin', 'dash', 'headcount'], queryFn: headcount, enabled: showEmployees });
+  const att = useQuery({
+    queryKey: ['admin', 'dash', 'attendance', today],
+    queryFn: () => attendanceToday(today),
+    enabled: showAttendance,
+  });
   const pay = useQuery({
     queryKey: ['admin', 'dash', 'payroll'],
     queryFn: payrollSummary,
-    enabled: hasModule('payroll'),
+    enabled: showPayroll,
   });
-  const griev = useQuery({ queryKey: ['admin', 'dash', 'grievances'], queryFn: grievanceStats });
+  const griev = useQuery({
+    queryKey: ['admin', 'dash', 'grievances'],
+    queryFn: grievanceStats,
+    enabled: showGrievances,
+  });
   const refreshing = heads.isRefetching || att.isRefetching || pay.isRefetching || griev.isRefetching;
   const onRefresh = () => {
-    heads.refetch();
-    att.refetch();
-    if (hasModule('payroll')) pay.refetch();
-    griev.refetch();
+    if (showEmployees) heads.refetch();
+    if (showAttendance) att.refetch();
+    if (showPayroll) pay.refetch();
+    if (showGrievances) griev.refetch();
   };
   const go = (href) => router.push(href);
   return (
@@ -45,25 +58,33 @@ export default function AdminDashboard() {
       <CompanyScopeNotice message="Pick a company to see its figures — without one the cards below may be empty." />
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-        <Kpi label="Employees" value={heads.data} />
-        <Kpi
-          label="Present today"
-          value={
-            att.data?.present != null ? `${att.data.present}${att.data.total ? ` / ${att.data.total}` : ''}` : null
-          }
-          hint={att.data?.percent != null ? `${att.data.percent}% attendance` : null}
-        />
-        <Kpi label="Absent today" value={att.data?.absent} />
-        <Kpi label="On leave today" value={att.data?.onLeave} />
-        <Kpi
-          label="Open grievances"
-          value={griev.data?.totalOpen}
-          hint={griev.data?.slaBreached ? `${griev.data.slaBreached} SLA breached` : null}
-        />
-        <Kpi label="Avg days to resolve" value={griev.data?.avgDaysToResolve} />
+        {showEmployees ? <Kpi label="Employees" value={heads.data} /> : null}
+        {showAttendance ? (
+          <>
+            <Kpi
+              label="Present today"
+              value={
+                att.data?.present != null ? `${att.data.present}${att.data.total ? ` / ${att.data.total}` : ''}` : null
+              }
+              hint={att.data?.percent != null ? `${att.data.percent}% attendance` : null}
+            />
+            <Kpi label="Absent today" value={att.data?.absent} />
+            <Kpi label="On leave today" value={att.data?.onLeave} />
+          </>
+        ) : null}
+        {showGrievances ? (
+          <>
+            <Kpi
+              label="Open grievances"
+              value={griev.data?.totalOpen}
+              hint={griev.data?.slaBreached ? `${griev.data.slaBreached} SLA breached` : null}
+            />
+            <Kpi label="Avg days to resolve" value={griev.data?.avgDaysToResolve} />
+          </>
+        ) : null}
       </View>
 
-      {hasModule('payroll') ? (
+      {showPayroll ? (
         <Card>
           <Text style={{ fontWeight: '600', fontSize: 16 }}>Payroll</Text>
           {pay.data?.latest ? (
@@ -82,14 +103,22 @@ export default function AdminDashboard() {
       ) : null}
 
       <Card style={{ paddingVertical: 0, gap: 0 }}>
-        <MenuRow icon="id-card-outline" label="Employees" onPress={() => go('/admin/employees')} />
-        <MenuRow icon="calendar-number-outline" label="Employee attendance" onPress={() => go('/admin/attendance')} />
-        <MenuRow icon="chatbubbles-outline" label="Grievances" onPress={() => go('/admin/grievances')} />
-        {hasModule('payroll') ? (
+        {showEmployees ? (
+          <MenuRow icon="id-card-outline" label="Employees" onPress={() => go('/admin/employees')} />
+        ) : null}
+        {showAttendance ? (
+          <MenuRow icon="calendar-number-outline" label="Employee attendance" onPress={() => go('/admin/attendance')} />
+        ) : null}
+        {showGrievances ? (
+          <MenuRow icon="chatbubbles-outline" label="Grievances" onPress={() => go('/admin/grievances')} />
+        ) : null}
+        {showPayroll ? (
           <MenuRow icon="wallet-outline" label="Payroll runs" onPress={() => go('/admin/payroll-runs')} />
         ) : null}
         <MenuRow icon="layers-outline" label="Masters" onPress={() => go('/admin/masters')} />
-        <MenuRow icon="shield-checkmark-outline" label="Roles & access" onPress={() => go('/admin/roles')} />
+        {showEmployees ? (
+          <MenuRow icon="shield-checkmark-outline" label="Roles & access" onPress={() => go('/admin/roles')} />
+        ) : null}
       </Card>
     </Page>
   );

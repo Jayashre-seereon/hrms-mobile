@@ -22,17 +22,26 @@ export function canDo(me, permission) {
   const list = permissionsOf(me);
   return list.includes('*') || list.includes(permission);
 }
-/** True when the user's roles grant anything in this module ("leave", "employee", "payroll", ...). */
-export function hasModule(me, module) {
-  if (isAdminRole(roleOf(me))) return true;
-  const mods = me?.permitted_modules;
-  if (
-    Array.isArray(mods) &&
-    mods.some((m) => String(typeof m === 'string' ? m : (m?.key ?? '')).toLowerCase() === module)
-  ) {
-    return true;
-  }
-  return permissionsOf(me).some((p) => p === '*' || p.startsWith(`${module}.`));
+const moduleKeys = (me) => {
+  const mods = me?.permitted_modules ?? me?.user?.permitted_modules;
+  return Array.isArray(mods)
+    ? mods.map((m) => String(typeof m === 'string' ? m : (m?.key ?? m?.module_key ?? '')).toLowerCase())
+    : null;
+};
+/**
+ * True when the user may use this module ("leave", "employee", "payroll", "helpdesk", ...) — same rule as the web
+ * sidebar (module-access.js): the key must be in /me.permitted_modules. For a Company Admin that list is exactly the
+ * modules enabled for the company, so a switched-off module (e.g. helpdesk → grievances) is hidden instead of
+ * answering 403 "Module not enabled for this company". A Super Admin is not bound to one company: the backend
+ * module guard always lets them through. Pass several keys for "any of".
+ */
+export function hasModule(me, ...modules) {
+  const wanted = modules.flat().map((m) => String(m).toLowerCase());
+  if (isSuperAdmin(me)) return true;
+  const keys = moduleKeys(me);
+  if (keys && wanted.some((m) => keys.includes(m))) return true;
+  if (isAdminRole(roleOf(me))) return keys === null; // older /me without the list: show, the server still decides
+  return permissionsOf(me).some((p) => p === '*' || wanted.some((m) => p.startsWith(`${m}.`)));
 }
 /** Employees see the self-service area; admins / HR also get the admin area. */
 export function isOrgUser(me) {
@@ -48,7 +57,7 @@ export function useAccess() {
     isSuperAdmin: isSuperAdmin(me),
     isOrgUser: isOrgUser(me),
     can: (permission) => canDo(me, permission),
-    hasModule: (module) => hasModule(me, module),
+    hasModule: (...modules) => hasModule(me, ...modules),
   };
 }
 /** Super Admin company scope (web: CompanySwitcher). `needsCompany` = Super Admin with no company picked. */
