@@ -26,3 +26,45 @@ export async function getOpenPosts() {
   if (Array.isArray(res?.data)) return res.data;
   return [];
 }
+/* ---------------- HR admin (web: referralApi.js "HR ADMIN ENDPOINTS", features/employees/components/ReferralsTab.jsx) ---------------- */
+export const REFERRAL_STATUSES = ['Submitted', 'Screening', 'Interviewing', 'Hired', 'Bonus paid', 'Not selected'];
+/** Statuses HR may set with PATCH /referrals/{id}/status (backend rejects any other value). */
+export const REFERRAL_STATUS_UPDATES = ['Screening', 'Interviewing', 'Hired', 'Not selected'];
+/** GET /referrals?page&pageSize&status&jobId&search → { items, total, page, pageSize } */
+export async function getAdminReferrals({ page = 1, pageSize = 100, status, jobId, search } = {}) {
+  const params = { page, pageSize };
+  if (status && status !== 'all') params.status = status;
+  if (jobId && jobId !== 'all') params.jobId = jobId;
+  if (search) params.search = search;
+  const res = unwrap((await api.get('/referrals', { params })).data);
+  const items = Array.isArray(res) ? res : (res?.items ?? []);
+  return { items, total: res?.total ?? items.length };
+}
+/**
+ * POST /referrals — HR logs a referral on behalf of an employee.
+ * { referrerId, candidateName, email, phone, relationship, jobId, jobTitle, skills, experienceYears, note,
+ *   bonusEligible, bonusAmount }
+ */
+export const createReferralOnBehalf = async (payload) => unwrap((await api.post('/referrals', payload)).data);
+/** GET /referrals/meta → { statuses, relationships } */
+export const getReferralMeta = async () => unwrap((await api.get('/referrals/meta')).data);
+/** GET /referrals/{id} — detail with ats_stage, interview details and audit `history`. */
+export const getAdminReferralDetail = async (id) =>
+  unwrap((await api.get(`/referrals/${encodeURIComponent(id)}`)).data);
+/** PATCH /referrals/{id}/status  body { status } */
+export const updateReferralStatus = async (id, status) =>
+  unwrap((await api.patch(`/referrals/${encodeURIComponent(id)}/status`, { status })).data);
+/** POST /referrals/{id}/pay-bonus  body { remarks } — backend enforces Hired + 90-day retention. */
+export const payReferralBonus = async (id, remarks = '') =>
+  unwrap(
+    (await api.post(`/referrals/${encodeURIComponent(id)}/pay-bonus`, { remarks: remarks?.trim() || undefined }))
+      .data,
+  );
+/** Same 90-day retention rule the web shows before allowing "Pay bonus" (counted from hire / creation date). */
+export function retentionOf(r = {}) {
+  const dateStr = r.hiredOn || r.hired_on || r.createdOn || r.created_on;
+  if (!dateStr) return { elapsed: 0, remaining: 90, eligible: false };
+  const diffDays = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+  const remaining = Math.max(0, 90 - diffDays);
+  return { elapsed: diffDays, remaining, eligible: remaining === 0 };
+}

@@ -12,6 +12,7 @@ import { canBulkImportEmployees } from '@/api/admin/employees-import';
 import { useAccess } from '@/lib/access';
 import { Pressable, Text } from 'react-native';
 import { useColors } from '@/ui/theme';
+import FormXiiiButton from '@/features/employees/FormXiiiButton';
 
 /** Header button that opens Bulk upload (same visibility rule as the web "Bulk Upload" button). */
 function ImportButton() {
@@ -111,8 +112,9 @@ export default function EmployeesScreen() {
               [e.department, e.branch_name ?? e.branch].filter(Boolean).join(' · '),
               e.work_email,
             ]}
-            onPress={() => router.push(`/admin/employees/${encodeURIComponent(String(e.id))}`)}
-          />
+            onPress={() => router.push(`/admin/employees/${encodeURIComponent(String(e.id))}`)}>
+            <FormXiiiButton employee={e} />
+          </ItemCard>
         )}
         ListEmptyComponent={
           q.isLoading ? (

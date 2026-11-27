@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Alert, Text, View } from 'react-native';
-import { deleteDraft, getMyTimesheetSummary, submitDraft } from '@/api/timesheets';
+import { deleteDraft, getMyTimesheetSummary, getMyTimesheetYtd, submitDraft } from '@/api/timesheets';
 import { errorMessage } from '@/lib/api';
 import { Button, Card, ErrorText, Loading, Muted } from '@/ui/components';
 import { fmtDate, fmtTime } from '@/ui/format';
@@ -20,6 +20,28 @@ function Kpi({ label, value }) {
       <Text style={{ fontSize: 20, fontWeight: '700', color: c.text }}>{value ?? 0}</Text>
       <Muted style={{ fontSize: 12, textAlign: 'center' }}>{label}</Muted>
     </View>
+  );
+}
+/** Financial-year summary (GET /timesheets/me/ytd). */
+function YtdCard() {
+  const c = useColors();
+  const q = useQuery({ queryKey: ['timesheets', 'ytd'], queryFn: () => getMyTimesheetYtd() });
+  if (q.isLoading || q.error || !q.data) return null;
+  const y = q.data;
+  const projects = (y.by_project ?? []).filter((p) => Number(p.hours) > 0).slice(0, 5);
+  return (
+    <Card style={{ gap: 6 }}>
+      <Text style={{ color: c.text, fontWeight: '700' }}>Year to date{y.fy_label ? ` · ${y.fy_label}` : ''}</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+        <Kpi label="Total hours" value={y.total_hours} />
+        <Kpi label="Billable" value={y.billable_hours} />
+        <Kpi label="Avg / day" value={y.avg_per_day} />
+        <Kpi label="Approved" value={`${y.approved_pct ?? 0}%`} />
+      </View>
+      {projects.length ? (
+        <Muted style={{ fontSize: 12 }}>{projects.map((p) => `${p.project}: ${p.hours} h`).join(' · ')}</Muted>
+      ) : null}
+    </Card>
   );
 }
 /** My timesheets (web: MyTimesheetsView → GET /timesheets/me: kpis + grouped_history). */
@@ -58,6 +80,7 @@ export default function TimesheetsScreen() {
               <Kpi label="Overtime" value={kpis.overtime_hours} />
               <Kpi label="Short hours" value={kpis.short_hours} />
             </Card>
+            <YtdCard />
             {groups.length === 0 ? <Muted>No timesheet entries yet. Tap + to log your work.</Muted> : null}
             {groups.map((g) => (
               <View key={g.date} style={{ gap: 8 }}>

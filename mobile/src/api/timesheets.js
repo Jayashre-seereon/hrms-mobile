@@ -19,3 +19,17 @@ export const getTimesheetFormats = async () => {
   const d = unwrap((await api.get(`${BASE}/formats`)).data);
   return Array.isArray(d) ? d : [];
 };
+/**
+ * GET /timesheets/me/ytd?upto=YYYY-MM-DD — Financial-year (Apr–Mar) analytics:
+ * { fy_label, total_hours, billable_hours, avg_per_day, approved_pct, months: [...], by_project: [{ project, hours }] }
+ */
+export const getMyTimesheetYtd = async (upto) =>
+  unwrap((await api.get(`${BASE}/me/ytd`, { params: upto ? { upto } : {} })).data);
+/**
+ * POST /timesheets/entries/{id}/decision  body { action: 'APPROVE' | 'REJECT', remarks } — manager (direct reports)
+ * or HR / admin. Remarks are required to reject. Returns the updated entry.
+ */
+export const reviewTimesheetEntry = async (entryId, { action, remarks = '' }) =>
+  unwrap(
+    (await api.post(`${BASE}/entries/${encodeURIComponent(String(entryId))}/decision`, { action, remarks })).data,
+  );

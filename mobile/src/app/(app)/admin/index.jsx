@@ -20,7 +20,7 @@ function Kpi({ label, value, hint }) {
 const money = (v) => (v == null ? '—' : `₹${Math.round(v).toLocaleString('en-IN')}`);
 export default function AdminDashboard() {
   const router = useRouter();
-  const { hasModule } = useAccess();
+  const { hasModule, can, isSuperAdmin } = useAccess();
   const today = toISODate(new Date());
   // Each card loads on its own: one failing call only blanks that card (same as web).
   // A card only calls its API when the module is on for the company (web: permitted_modules) — no 403s.
@@ -109,6 +109,33 @@ export default function AdminDashboard() {
         {showAttendance ? (
           <MenuRow icon="calendar-number-outline" label="Employee attendance" onPress={() => go('/admin/attendance')} />
         ) : null}
+        {showAttendance ? (
+          <MenuRow
+            icon="bar-chart-outline"
+            label="Attendance reports"
+            onPress={() => go('/admin/attendance-reports')}
+          />
+        ) : null}
+        {showAttendance && can('attendance.lock') ? (
+          <MenuRow
+            icon="lock-closed-outline"
+            label="Payroll attendance lock"
+            onPress={() => go('/admin/attendance-locks')}
+          />
+        ) : null}
+        {showAttendance ? (
+          <MenuRow
+            icon="checkmark-circle-outline"
+            label="Timesheet approvals"
+            onPress={() => go('/timesheets/approvals')}
+          />
+        ) : null}
+        {hasModule('recruitment') ? (
+          <MenuRow icon="people-outline" label="Referrals" onPress={() => go('/admin/referrals')} />
+        ) : null}
+        {showEmployees && can('employee.edit') ? (
+          <MenuRow icon="trending-up-outline" label="Promotions" onPress={() => go('/movements/manage')} />
+        ) : null}
         {showGrievances ? (
           <MenuRow icon="chatbubbles-outline" label="Grievances" onPress={() => go('/admin/grievances')} />
         ) : null}
@@ -118,6 +145,16 @@ export default function AdminDashboard() {
         <MenuRow icon="layers-outline" label="Masters" onPress={() => go('/admin/masters')} />
         {showEmployees ? (
           <MenuRow icon="shield-checkmark-outline" label="Roles & access" onPress={() => go('/admin/roles')} />
+        ) : null}
+        {showAttendance ? (
+          <MenuRow icon="clipboard-outline" label="Compliance" onPress={() => go('/admin/compliance')} />
+        ) : null}
+        {isSuperAdmin ? (
+          <>
+            <MenuRow icon="grid-outline" label="Organisation dashboard" onPress={() => go('/admin/org-dashboard')} />
+            <MenuRow icon="business-outline" label="Companies" onPress={() => go('/admin/companies')} />
+            <MenuRow icon="ribbon-outline" label="Organisation profile" onPress={() => go('/admin/organisation')} />
+          </>
         ) : null}
       </Card>
     </Page>

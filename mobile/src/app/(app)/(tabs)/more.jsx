@@ -25,7 +25,7 @@ function Section({ title, items, hidden }) {
   );
 }
 export default function MoreScreen() {
-  const { me, isOrgUser, hasModule } = useAccess();
+  const { me, isOrgUser, isSuperAdmin, hasModule, can } = useAccess();
   // Admin / HR account without a linked employee record: the self-service lists would answer 403 "No employee profile".
   const self = !(isOrgUser && !profileOf(me).employee_id);
   return (
@@ -54,6 +54,19 @@ export default function MoreScreen() {
             icon: 'swap-horizontal-outline',
             label: 'Comp-off',
             href: '/attendance/comp-off',
+            show: hasModule('attendance'),
+          },
+          {
+            icon: 'calendar-outline',
+            label: 'Attendance history',
+            hint: 'Calendar & monthly history',
+            href: '/attendance/history',
+            show: hasModule('attendance'),
+          },
+          {
+            icon: 'finger-print-outline',
+            label: 'My punches',
+            href: '/attendance/punches',
             show: hasModule('attendance'),
           },
           { icon: 'document-text-outline', label: 'Timesheets', href: '/timesheets', show: hasModule('attendance') },
@@ -115,6 +128,37 @@ export default function MoreScreen() {
             show: isOrgUser && hasModule('attendance'),
           },
           {
+            icon: 'bar-chart-outline',
+            label: 'Attendance reports',
+            hint: 'Report, work hours & OT',
+            href: '/admin/attendance-reports',
+            show: isOrgUser && hasModule('attendance'),
+          },
+          {
+            icon: 'lock-closed-outline',
+            label: 'Payroll attendance lock',
+            href: '/admin/attendance-locks',
+            show: isOrgUser && hasModule('attendance') && can('attendance.lock'),
+          },
+          {
+            icon: 'checkmark-circle-outline',
+            label: 'Timesheet approvals',
+            href: '/timesheets/approvals',
+            show: isOrgUser && hasModule('attendance'),
+          },
+          {
+            icon: 'people-outline',
+            label: 'Referrals',
+            href: '/admin/referrals',
+            show: isOrgUser && hasModule('recruitment'),
+          },
+          {
+            icon: 'trending-up-outline',
+            label: 'Promotions',
+            href: '/movements/manage',
+            show: isOrgUser && hasModule('employee') && can('employee.edit'),
+          },
+          {
             icon: 'chatbubbles-outline',
             label: 'Grievances',
             href: '/admin/grievances',
@@ -139,6 +183,28 @@ export default function MoreScreen() {
             href: '/admin/roles',
             show: isOrgUser && hasModule('employee'),
           },
+          {
+            icon: 'clipboard-outline',
+            label: 'Compliance',
+            hint: 'Attendance patterns, timesheet formats',
+            href: '/admin/compliance',
+            show: isOrgUser && hasModule('attendance'),
+          },
+        ]}
+      />
+
+      <Section
+        title="Organisation"
+        items={[
+          { icon: 'grid-outline', label: 'Organisation dashboard', href: '/admin/org-dashboard', show: isSuperAdmin },
+          {
+            icon: 'business-outline',
+            label: 'Companies',
+            hint: 'Companies & modules',
+            href: '/admin/companies',
+            show: isSuperAdmin,
+          },
+          { icon: 'ribbon-outline', label: 'Organisation profile', href: '/admin/organisation', show: isSuperAdmin },
         ]}
       />
     </Screen>

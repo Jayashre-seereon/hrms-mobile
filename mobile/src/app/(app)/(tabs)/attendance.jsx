@@ -13,6 +13,7 @@ const QUICK_LINKS = [
   { label: 'Corrections', href: '/attendance/corrections', icon: 'create-outline' },
   { label: 'Comp-off', href: '/attendance/comp-off', icon: 'swap-horizontal-outline' },
   { label: 'Timesheets', href: '/timesheets', icon: 'document-text-outline' },
+  { label: 'History', href: '/attendance/history', icon: 'calendar-outline' },
 ];
 export default function AttendanceScreen() {
   const c = useColors();
