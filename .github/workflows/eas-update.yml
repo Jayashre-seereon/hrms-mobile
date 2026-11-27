@@ -35,6 +35,9 @@ jobs:
         run: npm ci
 
       - name: Publish update
+        env:
+          # Set in GitHub: Settings → Secrets and variables → Actions → Variables
+          EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL }}
         run: |
           if [ "${{ github.ref_name }}" = "main" ]; then
             eas update --channel production --auto --non-interactive

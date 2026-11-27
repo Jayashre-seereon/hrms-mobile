@@ -1,18 +1,55 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { useSession } from '@/store/session';
 
 SplashScreen.preventAutoHideAsync();
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
+});
+
+export default function RootLayout() {
+  const scheme = useColorScheme();
+  const status = useSession((s) => s.status);
+  const mustChangePassword = useSession((s) => s.mustChangePassword);
+  const bootstrap = useSession((s) => s.bootstrap);
+
+  useEffect(() => {
+    bootstrap();
+  }, [bootstrap]);
+
+  useEffect(() => {
+    if (status !== 'loading') SplashScreen.hideAsync();
+  }, [status]);
+
+  if (status === 'loading') return null; // splash screen stays visible
+
+  const signedIn = status === 'signedIn';
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider value={scheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <StatusBar style="auto" />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Protected guard={!signedIn}>
+              <Stack.Screen name="login" />
+            </Stack.Protected>
+            <Stack.Protected guard={signedIn && mustChangePassword}>
+              <Stack.Screen name="change-password" />
+            </Stack.Protected>
+            <Stack.Protected guard={signedIn && !mustChangePassword}>
+              <Stack.Screen name="(tabs)" />
+            </Stack.Protected>
+          </Stack>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
 }
