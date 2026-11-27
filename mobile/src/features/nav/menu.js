@@ -11,13 +11,15 @@ export function useMenuGroups() {
   const self = !(isOrgUser && !profileOf(me).employee_id);
   // Super Admin before picking a company (web isOrgMode): only the organisation-level screens.
   const company = isOrgUser && !isOrgMode;
+  // Web Super Admin sidebar (ORG_NAV_GROUPS): no Timesheets, and Payroll has only runs / payslips / policy.
+  const notSuper = !isSuperAdmin;
   const att = hasModule('attendance');
   const groups = [
     {
       key: 'overview',
       label: 'Overview',
       items: [
-        { icon: 'grid-outline', label: 'Dashboard', href: isOrgMode ? '/admin/org-dashboard' : '/' },
+        { icon: 'grid-outline', label: 'Dashboard', href: isOrgMode ? '/admin/org-dashboard' : isSuperAdmin ? '/admin' : '/' },
         { icon: 'person-circle-outline', label: 'My Profile', href: '/profile' },
       ],
     },
@@ -78,7 +80,8 @@ export function useMenuGroups() {
       label: 'Administration',
       show: company,
       items: [
-        { icon: 'stats-chart-outline', label: 'Admin dashboard', href: '/admin' },
+        // Super Admin: the Overview "Dashboard" is already the company dashboard (web).
+        { icon: 'stats-chart-outline', label: 'Admin dashboard', href: '/admin', show: notSuper },
         { icon: 'layers-outline', label: 'Master data', href: '/admin/masters' },
         {
           icon: 'shield-checkmark-outline',
@@ -128,7 +131,12 @@ export function useMenuGroups() {
           href: '/leave/approvals',
           show: hasModule('leave'),
         },
-        { icon: 'checkmark-circle-outline', label: 'Timesheet approvals', href: '/timesheets/approvals', show: att },
+        {
+          icon: 'checkmark-circle-outline',
+          label: 'Timesheet approvals',
+          href: '/timesheets/approvals',
+          show: att && notSuper,
+        },
         { icon: 'clipboard-outline', label: 'Compliance', href: '/admin/compliance', show: att },
       ],
     },
@@ -139,8 +147,13 @@ export function useMenuGroups() {
       items: [
         { icon: 'wallet-outline', label: 'Payroll runs', href: '/admin/payroll-runs' },
         { icon: 'add-circle-outline', label: 'Payroll adjustments', href: '/admin/payroll/adjustments' },
-        { icon: 'construct-outline', label: 'Salary components', href: '/admin/payroll/salary-components' },
-        { icon: 'calculator-outline', label: 'Salary preview', href: '/admin/payroll/salary-preview' },
+        {
+          icon: 'construct-outline',
+          label: 'Salary components',
+          href: '/admin/payroll/salary-components',
+          show: notSuper,
+        },
+        { icon: 'calculator-outline', label: 'Salary preview', href: '/admin/payroll/salary-preview', show: notSuper },
         { icon: 'document-lock-outline', label: 'Payroll policy', href: '/admin/payroll/policy' },
       ],
     },
@@ -149,13 +162,16 @@ export function useMenuGroups() {
       label: 'Organisation',
       show: isSuperAdmin,
       items: [
-        // In org mode the Overview "Dashboard" already opens it.
-        { icon: 'globe-outline', label: 'Organisation dashboard', href: '/admin/org-dashboard', show: !isOrgMode },
         // Web ORG_MODE_GROUPS: Dashboard, Companies, Company Modules, Reports & Analytics, Organisation Profile.
-        { icon: 'business-outline', label: 'Companies', href: '/admin/companies' },
-        { icon: 'cube-outline', label: 'Company modules', href: '/admin/companies/modules' },
-        { icon: 'bar-chart-outline', label: 'Reports & analytics', href: '/admin/org-reports' },
-        { icon: 'ribbon-outline', label: 'Organisation profile', href: '/admin/organisation' },
+        { icon: 'business-outline', label: isOrgMode ? 'Companies' : 'Companies & branches', href: '/admin/companies' },
+        // Company modules / Reports are organisation-mode screens on the web.
+        { icon: 'cube-outline', label: 'Company modules', href: '/admin/companies/modules', show: isOrgMode },
+        { icon: 'bar-chart-outline', label: 'Reports & analytics', href: '/admin/org-reports', show: isOrgMode },
+        {
+          icon: 'ribbon-outline',
+          label: isOrgMode ? 'Organisation profile' : 'Organisation setup',
+          href: '/admin/organisation',
+        },
         {
           icon: 'swap-vertical-outline',
           label: isOrgMode ? 'Pick a company' : 'Switch company',
