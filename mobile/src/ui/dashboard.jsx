@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { initials } from './format';
 import { MenuButton } from './SideMenu';
@@ -186,3 +187,67 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
 });
+
+/** Pulsing grey block shown while data loads (instead of an empty screen or a lone spinner). */
+export function Skeleton({ width = '100%', height = 14, radius = 8, style }) {
+  const c = useColors();
+  const pulse = useRef(new Animated.Value(0.5)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.5, duration: 700, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulse]);
+  return (
+    <Animated.View
+      style={[{ width, height, borderRadius: radius, backgroundColor: c.mutedBg, opacity: pulse }, style]}
+    />
+  );
+}
+
+/** Placeholder grid of stat tiles. */
+export function SkeletonTiles({ count = 3 }) {
+  const c = useColors();
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+      {Array.from({ length: count }, (_, i) => (
+        <View key={i} style={[styles.tile, { backgroundColor: c.card, borderColor: c.border, gap: 10 }]}>
+          <Skeleton width={34} height={34} radius={10} />
+          <Skeleton width="60%" height={20} />
+          <Skeleton width="80%" height={11} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** Placeholder card with a title line and a few text lines. */
+export function SkeletonCard({ lines = 3 }) {
+  const c = useColors();
+  return (
+    <View
+      style={{
+        borderWidth: 1,
+        borderRadius: 18,
+        padding: 16,
+        gap: 12,
+        backgroundColor: c.card,
+        borderColor: c.border,
+      }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Skeleton width={42} height={42} radius={12} />
+        <View style={{ flex: 1, gap: 8 }}>
+          <Skeleton width="55%" height={15} />
+          <Skeleton width="35%" height={11} />
+        </View>
+      </View>
+      {Array.from({ length: lines }, (_, i) => (
+        <Skeleton key={i} width={i === lines - 1 ? '70%' : '100%'} height={12} />
+      ))}
+    </View>
+  );
+}

@@ -8,8 +8,8 @@ import { getOrgDashboardCards } from '@/api/admin/companies';
 import { errorMessage } from '@/lib/api';
 import { useAccess } from '@/lib/access';
 import { displayName, useSession } from '@/store/session';
-import { Button, ErrorText, Loading, Muted } from '@/ui/components';
-import { Hero, Pill, QuickAction, SectionHeader, StatTile } from '@/ui/dashboard';
+import { Button, ErrorText, Muted } from '@/ui/components';
+import { Hero, Pill, QuickAction, SectionHeader, SkeletonCard, SkeletonTiles, StatTile } from '@/ui/dashboard';
 import { Header, Page } from '@/ui/kit';
 import { useColors } from '@/ui/theme';
 
@@ -144,7 +144,13 @@ export default function OrgDashboardScreen() {
             </View>
           </Panel>
 
-          {q.isLoading ? <Loading /> : null}
+          {q.isLoading ? (
+            <>
+              <SkeletonTiles count={3} />
+              <SkeletonCard lines={2} />
+              <SkeletonCard lines={2} />
+            </>
+          ) : null}
           {q.error ? <ErrorText>{errorMessage(q.error, 'Could not load the organisation data.')}</ErrorText> : null}
           {!q.isLoading && !q.error && !cards.length ? (
             <Panel>

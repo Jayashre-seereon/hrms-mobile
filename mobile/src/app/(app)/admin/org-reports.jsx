@@ -3,8 +3,8 @@ import { Text, View } from 'react-native';
 import { getOrgDashboardCards } from '@/api/admin/companies';
 import { errorMessage } from '@/lib/api';
 import { useAccess } from '@/lib/access';
-import { Card, ErrorText, Loading, Muted } from '@/ui/components';
-import { Progress, SectionHeader, StatTile } from '@/ui/dashboard';
+import { Card, ErrorText, Muted } from '@/ui/components';
+import { Progress, SectionHeader, SkeletonCard, SkeletonTiles, StatTile } from '@/ui/dashboard';
 import { Header, Page } from '@/ui/kit';
 import { useColors } from '@/ui/theme';
 
@@ -34,7 +34,12 @@ export default function OrgReportsScreen() {
     <Page onRefresh={() => q.refetch()} refreshing={q.isRefetching}>
       <Header title="Reports & Analytics" />
       <Muted>Aggregate numbers across companies. Employee-level reports live inside each company.</Muted>
-      {q.isLoading ? <Loading /> : null}
+      {q.isLoading ? (
+        <>
+          <SkeletonTiles count={4} />
+          <SkeletonCard lines={4} />
+        </>
+      ) : null}
       {q.error ? <ErrorText>{errorMessage(q.error, 'Could not load the organisation data.')}</ErrorText> : null}
       {!q.isLoading && !q.error && !cards.length ? <Muted>No companies yet.</Muted> : null}
       {cards.length ? (

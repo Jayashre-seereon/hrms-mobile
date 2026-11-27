@@ -11,8 +11,8 @@ import { errorMessage } from '@/lib/api';
 import { isOrgUser, useAccess } from '@/lib/access';
 import { CompanySwitcherRow } from '@/lib/CompanyScopeNotice';
 import { displayName, profileOf, useSession } from '@/store/session';
-import { Button, ErrorText, Loading, Muted } from '@/ui/components';
-import { Hero, Pill, Progress, QuickAction, SectionHeader, StatTile } from '@/ui/dashboard';
+import { Button, ErrorText, Muted } from '@/ui/components';
+import { Hero, Pill, Progress, QuickAction, SectionHeader, Skeleton, SkeletonTiles, StatTile } from '@/ui/dashboard';
 import { fmtTime } from '@/ui/format';
 import { isNoEmployeeProfile } from '@/ui/NoEmployeeProfile';
 import { useColors } from '@/ui/theme';
@@ -280,7 +280,7 @@ export default function HomeScreen() {
                   )}
                 </View>
                 {today.isLoading ? (
-                  <Loading />
+                  <Skeleton height={64} radius={14} />
                 ) : todayError ? (
                   <ErrorText>{errorMessage(todayError, 'Could not load today’s status.')}</ErrorText>
                 ) : (
@@ -334,7 +334,7 @@ export default function HomeScreen() {
               {/* This month */}
               <SectionHeader title="This month" action="History" onAction={() => router.push('/attendance/history')} />
               {summary.isLoading ? (
-                <Loading />
+                <SkeletonTiles count={6} />
               ) : (
                 <View style={styles.tiles}>
                   <StatTile icon="checkmark-circle-outline" label="Present" value={s?.present_days} tone="primary" />
