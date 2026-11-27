@@ -1,3 +1,4 @@
+import { MASTER_GROUPS, MASTERS, masterModules } from '@/features/masters/registry';
 import { useAccess } from '@/lib/access';
 import { profileOf } from '@/store/session';
 /**
@@ -14,6 +15,18 @@ export function useMenuGroups() {
   // Web Super Admin sidebar (ORG_NAV_GROUPS): no Timesheets, and Payroll has only runs / payslips / policy.
   const notSuper = !isSuperAdmin;
   const att = hasModule('attendance');
+  // Master data sub-menu: every master the company's modules allow, in the Masters screen's group order.
+  const masterChildren = [
+    { label: 'All master data', href: '/admin/masters' },
+    ...MASTER_GROUPS.flatMap((grp) =>
+      MASTERS.filter((m) => m.group === grp)
+        .filter((m) => {
+          const mods = masterModules(m);
+          return !mods || hasModule(...mods);
+        })
+        .map((m) => ({ label: m.title, href: m.href ?? `/admin/masters/${m.key}` })),
+    ),
+  ];
   const groups = [
     {
       key: 'overview',
@@ -86,7 +99,7 @@ export function useMenuGroups() {
       items: [
         // Super Admin: the Overview "Dashboard" is already the company dashboard (web).
         { icon: 'stats-chart-outline', label: 'Admin dashboard', href: '/admin', show: notSuper },
-        { icon: 'layers-outline', label: 'Master data', href: '/admin/masters' },
+        { icon: 'layers-outline', label: 'Master data', href: '/admin/masters', children: masterChildren },
         {
           icon: 'shield-checkmark-outline',
           label: 'Roles & permissions',

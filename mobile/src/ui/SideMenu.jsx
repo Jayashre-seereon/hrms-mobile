@@ -35,7 +35,7 @@ export function MenuButton({ light = false }) {
   );
 }
 
-const WIDTH = Math.min(320, Math.round(Dimensions.get('window').width * 0.84));
+const WIDTH = Math.min(280, Math.round(Dimensions.get('window').width * 0.76));
 const isActive = (path, href) => (href === '/' ? path === '/' : path === href || path.startsWith(`${href}/`));
 
 /** Web-style sidebar as a slide-in drawer: dark emerald, gold active item, collapsible groups. Mounted once. */
@@ -55,6 +55,7 @@ export function SideMenu() {
   const [logoFailed, setLogoFailed] = useState(false);
   const groups = useMenuGroups();
   const [closed, setClosed] = useState({});
+  const [expanded, setExpanded] = useState({});
   const [visible, setVisible] = useState(false);
   const x = useRef(new Animated.Value(-WIDTH)).current;
 
@@ -73,7 +74,7 @@ export function SideMenu() {
   };
   // Only the most specific match is active (/attendance/history, not also /attendance).
   const activeHref = groups
-    .flatMap((g) => g.items.map((i) => i.href))
+    .flatMap((g) => g.items.flatMap((i) => [i.href, ...(i.children ?? []).map((ch) => ch.href)]))
     .filter((h) => isActive(path, h))
     .sort((a, b) => b.length - a.length)[0];
   const p = profileOf(me);
@@ -149,7 +150,9 @@ export function SideMenu() {
 
           <ScrollView contentContainerStyle={{ paddingVertical: 8, paddingHorizontal: 10 }}>
             {groups.map((g) => {
-              const groupActive = g.items.some((i) => i.href === activeHref);
+              const groupActive = g.items.some(
+                (i) => i.href === activeHref || (i.children ?? []).some((ch) => ch.href === activeHref),
+              );
               const isOpen = groupActive || !closed[g.key];
               return (
                 <View key={g.key} style={{ marginBottom: 4 }}>
@@ -159,34 +162,80 @@ export function SideMenu() {
                   </Pressable>
                   {isOpen
                     ? g.items.map((i) => {
-                        const active = i.href === activeHref;
+                        const kids = i.children ?? [];
+                        const childActive = kids.some((ch) => ch.href === activeHref);
+                        const active = i.href === activeHref && !childActive;
+                        const isExpanded = kids.length > 0 && (expanded[i.href] ?? childActive);
                         return (
-                          <Pressable
-                            key={i.href}
-                            onPress={() => go(i.href)}
-                            style={({ pressed }) => [
-                              styles.item,
-                              {
-                                backgroundColor: active ? c.sidebarActive : pressed ? c.sidebarAccent : 'transparent',
-                              },
-                            ]}>
-                            <Ionicons
-                              name={i.icon}
-                              size={19}
-                              color={active ? c.sidebarActiveText : c.sidebarText}
-                              style={{ opacity: active ? 1 : 0.85 }}
-                            />
-                            <Text
-                              numberOfLines={1}
-                              style={{
-                                color: active ? c.sidebarActiveText : c.sidebarText,
-                                fontWeight: active ? '700' : '500',
-                                fontSize: 14.5,
-                                flex: 1,
-                              }}>
-                              {i.label}
-                            </Text>
-                          </Pressable>
+                          <View key={i.href}>
+                            <Pressable
+                              onPress={() =>
+                                kids.length ? setExpanded((s) => ({ ...s, [i.href]: !isExpanded })) : go(i.href)
+                              }
+                              style={({ pressed }) => [
+                                styles.item,
+                                {
+                                  backgroundColor: active ? c.sidebarActive : pressed ? c.sidebarAccent : 'transparent',
+                                },
+                              ]}>
+                              <Ionicons
+                                name={i.icon}
+                                size={19}
+                                color={active ? c.sidebarActiveText : c.sidebarText}
+                                style={{ opacity: active ? 1 : 0.85 }}
+                              />
+                              <Text
+                                numberOfLines={1}
+                                style={{
+                                  color: active ? c.sidebarActiveText : c.sidebarText,
+                                  fontWeight: active ? '700' : '500',
+                                  fontSize: 14.5,
+                                  flex: 1,
+                                }}>
+                                {i.label}
+                              </Text>
+                              {kids.length ? (
+                                <Ionicons
+                                  name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                                  size={15}
+                                  color={active ? c.sidebarActiveText : c.sidebarMuted}
+                                />
+                              ) : null}
+                            </Pressable>
+                            {isExpanded ? (
+                              <View style={[styles.sub, { borderLeftColor: c.sidebarBorder }]}>
+                                {kids.map((ch) => {
+                                  const on = ch.href === activeHref;
+                                  return (
+                                    <Pressable
+                                      key={ch.href}
+                                      onPress={() => go(ch.href)}
+                                      style={({ pressed }) => [
+                                        styles.subItem,
+                                        {
+                                          backgroundColor: on
+                                            ? c.sidebarActive
+                                            : pressed
+                                              ? c.sidebarAccent
+                                              : 'transparent',
+                                        },
+                                      ]}>
+                                      <Text
+                                        numberOfLines={1}
+                                        style={{
+                                          color: on ? c.sidebarActiveText : c.sidebarText,
+                                          fontWeight: on ? '700' : '500',
+                                          fontSize: 13.5,
+                                          opacity: on ? 1 : 0.9,
+                                        }}>
+                                        {ch.label}
+                                      </Text>
+                                    </Pressable>
+                                  );
+                                })}
+                              </View>
+                            ) : null}
+                          </View>
                         );
                       })
                     : null}
@@ -252,5 +301,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginVertical: 1,
   },
+  sub: { marginLeft: 21, paddingLeft: 10, borderLeftWidth: 1, marginBottom: 4 },
+  subItem: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, marginVertical: 1 },
   foot: { borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 10, paddingTop: 8 },
 });
