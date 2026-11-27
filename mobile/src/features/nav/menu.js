@@ -19,7 +19,11 @@ export function useMenuGroups() {
       key: 'overview',
       label: 'Overview',
       items: [
-        { icon: 'grid-outline', label: 'Dashboard', href: isOrgMode ? '/admin/org-dashboard' : isSuperAdmin ? '/admin' : '/' },
+        {
+          icon: 'grid-outline',
+          label: 'Dashboard',
+          href: isOrgMode ? '/admin/org-dashboard' : isSuperAdmin ? '/admin' : '/',
+        },
         { icon: 'person-circle-outline', label: 'My Profile', href: '/profile' },
       ],
     },
@@ -89,6 +93,8 @@ export function useMenuGroups() {
           href: '/admin/roles',
           show: hasModule('employee'),
         },
+        { icon: 'swap-horizontal-outline', label: 'Role delegation', href: '/admin/delegations' },
+        { icon: 'settings-outline', label: 'Settings', href: '/admin/settings', show: can('settings.manage') },
       ],
     },
     {
@@ -97,6 +103,7 @@ export function useMenuGroups() {
       show: company,
       items: [
         { icon: 'people-outline', label: 'Employees', href: '/admin/employees', show: hasModule('employee') },
+        { icon: 'briefcase-outline', label: 'Lifecycle cases', href: '/admin/cases', show: hasModule('employee') },
         {
           icon: 'trending-up-outline',
           label: 'Promotions',
