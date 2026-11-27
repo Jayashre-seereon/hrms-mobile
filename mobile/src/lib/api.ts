@@ -1,6 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 import { API_TIMEOUT_MS, API_URL } from './config';
+import { applyScopeRules } from './scope';
 import { tokens } from './tokens';
 
 /**
@@ -9,6 +10,8 @@ import { tokens } from './tokens';
  * - 401 → one refresh attempt with the refresh token, then retry
  * - 401 "signed out" → session ended on another device → sign out
  * - 403 "password change required" → show the change-password screen
+ * - Super Admin company scope: X-Company-Id header + scope keys stripped (lib/scope.ts)
+ * - 400 "select a company" → open the company picker (Super Admin)
  */
 export const api = axios.create({
   baseURL: API_URL,
@@ -17,8 +20,8 @@ export const api = axios.create({
 });
 
 /** The session store registers these so the API layer does not import it (avoids a cycle). */
-type Handlers = { onSignedOut: () => void; onPasswordChangeRequired: () => void };
-let handlers: Handlers = { onSignedOut: () => {}, onPasswordChangeRequired: () => {} };
+type Handlers = { onSignedOut: () => void; onPasswordChangeRequired: () => void; onNeedCompany?: () => void };
+let handlers: Handlers = { onSignedOut: () => {}, onPasswordChangeRequired: () => {}, onNeedCompany: () => {} };
 export function setApiHandlers(h: Handlers) {
   handlers = h;
 }
@@ -30,7 +33,8 @@ api.interceptors.request.use((config) => {
   if (token && !isAuthUrl(config.url)) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  return config;
+  // Company isolation: Super Admin sends X-Company-Id once a company is picked; everyone else sends no scope.
+  return applyScopeRules(config);
 });
 
 /** Shared refresh so several 401s at once trigger only one refresh call. */
@@ -61,7 +65,8 @@ export function errorDetail(error: unknown): string {
 export function errorMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
   const e = error as AxiosError;
   if (!e.response) return 'Cannot reach the server. Check your connection and try again.';
-  return errorDetail(error) || fallback;
+  const userMessage = (e as AxiosError & { userMessage?: string }).userMessage;
+  return userMessage || errorDetail(error) || fallback;
 }
 
 api.interceptors.response.use(
@@ -77,6 +82,12 @@ api.interceptors.response.use(
     }
     if (status === 403 && /password change required/i.test(detail)) {
       handlers.onPasswordChangeRequired();
+      return Promise.reject(error);
+    }
+    // Super Admin acted on a company screen without a company: open the picker.
+    if (status === 400 && /select a company/i.test(detail)) {
+      (error as AxiosError & { userMessage?: string }).userMessage = 'Select a company first';
+      handlers.onNeedCompany?.();
       return Promise.reject(error);
     }
     if (status !== 401 || !request || request._retry || isAuthUrl(request.url) || !tokens.getRefresh()) {

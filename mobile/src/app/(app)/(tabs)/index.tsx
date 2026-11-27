@@ -4,6 +4,7 @@ import { RefreshControl, Text, View } from 'react-native';
 
 import { getMySummary, getTodayStatus } from '@/api/attendance';
 import { errorMessage } from '@/lib/api';
+import { CompanySwitcherRow } from '@/lib/CompanyScopeNotice';
 import { displayName, profileOf, useSession } from '@/store/session';
 import { Button, Card, ErrorText, Loading, Muted, Screen } from '@/ui/components';
 import { fmtTime } from '@/ui/format';
@@ -45,6 +46,8 @@ export default function HomeScreen() {
           {[p.designation, p.department].filter(Boolean).join(' · ') || new Date().toDateString()}
         </Text>
       </View>
+
+      <CompanySwitcherRow />
 
       <Card>
         <Text style={{ fontSize: 16, fontWeight: '600', color: c.text }}>Today</Text>
