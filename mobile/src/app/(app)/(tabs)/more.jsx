@@ -1,212 +1,40 @@
 import { useRouter } from 'expo-router';
 import { Text } from 'react-native';
-import { useAccess } from '@/lib/access';
-import { profileOf } from '@/store/session';
+import { useMenuGroups } from '@/features/nav/menu';
 import { CompanySwitcherRow } from '@/lib/CompanyScopeNotice';
 import { Card, Screen, Title } from '@/ui/components';
 import { MenuRow } from '@/ui/kit';
 import { useColors } from '@/ui/theme';
-function Section({ title, items, hidden }) {
+/**
+ * Full menu as a page (the Menu tab normally opens the side menu instead; this screen is the fallback for
+ * deep links). Same groups and gates as the side menu — see features/nav/menu.js.
+ */
+export default function MoreScreen() {
   const c = useColors();
   const router = useRouter();
-  const visible = items.filter((i) => i.show !== false);
-  if (hidden || !visible.length) return null;
-  return (
-    <>
-      <Text style={{ color: c.muted, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', marginTop: 4 }}>
-        {title}
-      </Text>
-      <Card style={{ paddingVertical: 0, gap: 0 }}>
-        {visible.map((i) => (
-          <MenuRow key={i.href} icon={i.icon} label={i.label} hint={i.hint} onPress={() => router.push(i.href)} />
-        ))}
-      </Card>
-    </>
-  );
-}
-export default function MoreScreen() {
-  const { me, isOrgUser, isSuperAdmin, hasModule, can } = useAccess();
-  // Admin / HR account without a linked employee record: the self-service lists would answer 403 "No employee profile".
-  const self = !(isOrgUser && !profileOf(me).employee_id);
+  const groups = useMenuGroups();
   return (
     <Screen>
-      <Title>More</Title>
+      <Title>Menu</Title>
       <CompanySwitcherRow />
-
-      <Section
-        title="Time & attendance"
-        hidden={!self}
-        items={[
-          {
-            icon: 'time-outline',
-            label: 'Regularisation',
-            hint: 'Missed punch-out requests',
-            href: '/attendance/regularisation',
-            show: hasModule('attendance'),
-          },
-          {
-            icon: 'create-outline',
-            label: 'Punch corrections',
-            href: '/attendance/corrections',
-            show: hasModule('attendance'),
-          },
-          {
-            icon: 'swap-horizontal-outline',
-            label: 'Comp-off',
-            href: '/attendance/comp-off',
-            show: hasModule('attendance'),
-          },
-          {
-            icon: 'calendar-outline',
-            label: 'Attendance history',
-            hint: 'Calendar & monthly history',
-            href: '/attendance/history',
-            show: hasModule('attendance'),
-          },
-          {
-            icon: 'finger-print-outline',
-            label: 'My punches',
-            href: '/attendance/punches',
-            show: hasModule('attendance'),
-          },
-          { icon: 'document-text-outline', label: 'Timesheets', href: '/timesheets', show: hasModule('attendance') },
-          { icon: 'sunny-outline', label: 'Holidays', href: '/holidays', show: hasModule('attendance', 'leave') },
-        ]}
-      />
-
-      <Section
-        title="Leave"
-        items={[
-          {
-            icon: 'checkmark-done-outline',
-            label: 'Leave approvals',
-            hint: 'Approve your team’s requests',
-            href: '/leave/approvals',
-            show: hasModule('leave'),
-          },
-        ]}
-      />
-
-      <Section
-        title="My work"
-        hidden={!self}
-        items={[
-          { icon: 'cash-outline', label: 'My payslips', href: '/payslips', show: hasModule('payroll') },
-          { icon: 'folder-open-outline', label: 'My documents', href: '/documents', show: hasModule('documents') },
-          {
-            icon: 'chatbubble-ellipses-outline',
-            label: 'My complaints',
-            href: '/complaints',
-            show: hasModule('helpdesk'),
-          },
-          { icon: 'people-outline', label: 'My referrals', href: '/referrals', show: hasModule('recruitment') },
-          { icon: 'trending-up-outline', label: 'My movements', hint: 'Promotions & transfers', href: '/movements' },
-          {
-            icon: 'speedometer-outline',
-            label: 'Performance indicators',
-            href: '/performance',
-            show: hasModule('performance'),
-          },
-          { icon: 'exit-outline', label: 'Resignation', href: '/resignation', show: hasModule('exit') },
-        ]}
-      />
-
-      <Section
-        title="Admin"
-        items={[
-          { icon: 'stats-chart-outline', label: 'Admin dashboard', href: '/admin', show: isOrgUser },
-          {
-            icon: 'id-card-outline',
-            label: 'Employees',
-            href: '/admin/employees',
-            show: isOrgUser && hasModule('employee'),
-          },
-          {
-            icon: 'calendar-number-outline',
-            label: 'Employee attendance',
-            href: '/admin/attendance',
-            show: isOrgUser && hasModule('attendance'),
-          },
-          {
-            icon: 'bar-chart-outline',
-            label: 'Attendance reports',
-            hint: 'Report, work hours & OT',
-            href: '/admin/attendance-reports',
-            show: isOrgUser && hasModule('attendance'),
-          },
-          {
-            icon: 'lock-closed-outline',
-            label: 'Payroll attendance lock',
-            href: '/admin/attendance-locks',
-            show: isOrgUser && hasModule('attendance') && can('attendance.lock'),
-          },
-          {
-            icon: 'checkmark-circle-outline',
-            label: 'Timesheet approvals',
-            href: '/timesheets/approvals',
-            show: isOrgUser && hasModule('attendance'),
-          },
-          {
-            icon: 'people-outline',
-            label: 'Referrals',
-            href: '/admin/referrals',
-            show: isOrgUser && hasModule('recruitment'),
-          },
-          {
-            icon: 'trending-up-outline',
-            label: 'Promotions',
-            href: '/movements/manage',
-            show: isOrgUser && hasModule('employee') && can('employee.edit'),
-          },
-          {
-            icon: 'chatbubbles-outline',
-            label: 'Grievances',
-            href: '/admin/grievances',
-            show: isOrgUser && hasModule('helpdesk'),
-          },
-          {
-            icon: 'wallet-outline',
-            label: 'Payroll runs',
-            href: '/admin/payroll-runs',
-            show: isOrgUser && hasModule('payroll'),
-          },
-          {
-            icon: 'layers-outline',
-            label: 'Masters',
-            hint: 'Departments, grades, leave types…',
-            href: '/admin/masters',
-            show: isOrgUser,
-          },
-          {
-            icon: 'shield-checkmark-outline',
-            label: 'Roles & access',
-            href: '/admin/roles',
-            show: isOrgUser && hasModule('employee'),
-          },
-          {
-            icon: 'clipboard-outline',
-            label: 'Compliance',
-            hint: 'Attendance patterns, timesheet formats',
-            href: '/admin/compliance',
-            show: isOrgUser && hasModule('attendance'),
-          },
-        ]}
-      />
-
-      <Section
-        title="Organisation"
-        items={[
-          { icon: 'grid-outline', label: 'Organisation dashboard', href: '/admin/org-dashboard', show: isSuperAdmin },
-          {
-            icon: 'business-outline',
-            label: 'Companies',
-            hint: 'Companies & modules',
-            href: '/admin/companies',
-            show: isSuperAdmin,
-          },
-          { icon: 'ribbon-outline', label: 'Organisation profile', href: '/admin/organisation', show: isSuperAdmin },
-        ]}
-      />
+      {groups.map((g) => (
+        <Card key={g.key} style={{ paddingVertical: 0, gap: 0 }}>
+          <Text
+            style={{
+              color: c.muted,
+              fontSize: 12,
+              fontWeight: '700',
+              letterSpacing: 0.6,
+              textTransform: 'uppercase',
+              paddingTop: 12,
+            }}>
+            {g.label}
+          </Text>
+          {g.items.map((i) => (
+            <MenuRow key={i.href} icon={i.icon} label={i.label} onPress={() => router.push(i.href)} />
+          ))}
+        </Card>
+      ))}
     </Screen>
   );
 }

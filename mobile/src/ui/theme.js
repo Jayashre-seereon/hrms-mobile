@@ -1,27 +1,79 @@
 import { useColorScheme } from 'react-native';
+/**
+ * Seereon HRMS brand — same palette as the web app (hrms-frontenddev/src/globals.css):
+ * emerald primary, dark-emerald sidebar / gradient end, gold accent, emerald-tinted neutrals.
+ * Screens read these through useColors(); never hard-code colours in a screen.
+ */
 const light = {
-  primary: '#1D4ED8',
+  primary: '#0F6B50', // --brand-emerald
+  primaryDark: '#0B4F3A', // --brand-emerald-dark (gradient end, sidebar)
   primaryText: '#FFFFFF',
-  background: '#F4F6FA',
+  primarySoft: '#E6F2EC', // tinted chip / icon background
+  gold: '#C8A951', // --brand-gold (accent, active menu item)
+  goldText: '#634800', // --gold-ink (readable gold text on light)
+  goldSoft: '#F7EFD9',
+  background: '#F8FAF8', // --background
   card: '#FFFFFF',
-  text: '#0F172A',
-  muted: '#64748B',
-  border: '#E2E8F0',
-  danger: '#DC2626',
-  success: '#16A34A',
-  warning: '#D97706',
+  text: '#09140F', // --foreground
+  muted: '#54615B', // --muted-foreground
+  mutedBg: '#EDF3F0', // --muted
+  border: '#DFE7E2', // --border
+  danger: '#E62C2C', // --destructive
+  dangerSoft: '#FDE8E8',
+  success: '#0F6B50',
+  successSoft: '#E6F2EC',
+  warning: '#B7791F',
+  warningSoft: '#FDF3E1',
+  info: '#3B8F93', // --chart-3
+  infoSoft: '#E3F1F2',
+  violet: '#7D5FAD', // --chart-5
+  violetSoft: '#EFE9F7',
+  orange: '#EB7A52', // --chart-4
+  orangeSoft: '#FDEDE6',
+  // side menu (web sidebar)
+  sidebar: '#0B4F3A',
+  sidebarText: '#E4F3EA',
+  sidebarMuted: '#9FC3B2',
+  sidebarAccent: '#043726',
+  sidebarBorder: '#1A5E48',
+  sidebarActive: '#C8A951',
+  sidebarActiveText: '#1F1A0B',
+  gradient: ['#0F6B50', '#0B4F3A'],
 };
 const dark = {
-  primary: '#3B82F6',
-  primaryText: '#FFFFFF',
-  background: '#0B1120',
-  card: '#111827',
-  text: '#F1F5F9',
-  muted: '#94A3B8',
-  border: '#1F2937',
-  danger: '#F87171',
-  success: '#4ADE80',
-  warning: '#FBBF24',
+  primary: '#5FC199',
+  primaryDark: '#0B3C2B',
+  primaryText: '#04140D',
+  primarySoft: '#13302A',
+  gold: '#EEC55E',
+  goldText: '#F2CD6F',
+  goldSoft: '#2E2914',
+  background: '#060D0B',
+  card: '#101917',
+  text: '#E9F1ED',
+  muted: '#9CA8A2',
+  mutedBg: '#1E2624',
+  border: '#1F2926',
+  danger: '#FF6367',
+  dangerSoft: '#3A1517',
+  success: '#5FC199',
+  successSoft: '#13302A',
+  warning: '#F2B84B',
+  warningSoft: '#33270F',
+  info: '#6CC3C7',
+  infoSoft: '#132C2E',
+  violet: '#B49AE0',
+  violetSoft: '#251D33',
+  orange: '#F59A78',
+  orangeSoft: '#35201A',
+  sidebar: '#06120E',
+  sidebarText: '#D8E0DC',
+  sidebarMuted: '#7E8F87',
+  sidebarAccent: '#152921',
+  sidebarBorder: '#18241F',
+  sidebarActive: '#EEC55E',
+  sidebarActiveText: '#1A1608',
+  gradient: ['#245A47', '#0B3C2B'],
 };
 export function useColors() {
   return useColorScheme() === 'dark' ? dark : light;
