@@ -243,7 +243,7 @@ export function Fab({ onPress, icon = 'add' }) {
   const c = useColors();
   return (
     <Pressable onPress={onPress} style={[styles.fab, { backgroundColor: c.primary }]}>
-      <Ionicons name={icon} size={28} color="#fff" />
+      <Ionicons name={icon} size={28} color={c.primaryText} />
     </Pressable>
   );
 }

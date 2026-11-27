@@ -6,7 +6,7 @@ import { personName } from '@/api/admin/common';
 import { getEmployees } from '@/api/admin/employees';
 import { errorMessage } from '@/lib/api';
 import { ErrorText, Field, Loading, Muted } from '@/ui/components';
-import { Badge, Header, ItemCard, Segments } from '@/ui/kit';
+import { Badge, Fab, Header, ItemCard, Segments } from '@/ui/kit';
 import { CompanyScopeNotice } from '@/lib/CompanyScopeNotice';
 import { canBulkImportEmployees } from '@/api/admin/employees-import';
 import { useAccess } from '@/lib/access';
@@ -14,7 +14,7 @@ import { Pressable, Text } from 'react-native';
 import { useColors } from '@/ui/theme';
 import FormXiiiButton from '@/features/employees/FormXiiiButton';
 
-/** Header button that opens Bulk upload (same visibility rule as the web "Bulk Upload" button). */
+/** Header button that opens Bulk upload (same visibility rule as the web "Bulk Upload" button). Add is the + button. */
 function ImportButton() {
   const router = useRouter();
   const c = useColors();
@@ -22,12 +22,9 @@ function ImportButton() {
   // Same rule as the web "Hire employee" and "Bulk Upload" buttons (canManagePeople).
   if (!canBulkImportEmployees(role, can)) return null;
   return (
-    <View style={{ flexDirection: 'row', gap: 16 }}>
+    <View style={{ flexDirection: 'row', gap: 16, paddingRight: 4 }}>
       <Pressable onPress={() => router.push('/admin/employees/import')} hitSlop={10}>
         <Text style={{ color: c.primary, fontWeight: '600', fontSize: 15 }}>Bulk upload</Text>
-      </Pressable>
-      <Pressable onPress={() => router.push('/admin/employees/new')} hitSlop={10} style={{ paddingRight: 4 }}>
-        <Text style={{ color: c.primary, fontWeight: '600', fontSize: 15 }}>Add</Text>
       </Pressable>
     </View>
   );
@@ -35,6 +32,9 @@ function ImportButton() {
 const PAGE_SIZE = 20;
 export default function EmployeesScreen() {
   const router = useRouter();
+  const { role, can } = useAccess();
+  // Same rule as the web "Hire employee" button (canManagePeople).
+  const canAdd = canBulkImportEmployees(role, can);
   const [text, setText] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
@@ -63,7 +63,7 @@ export default function EmployeesScreen() {
       <FlatList
         data={rows}
         keyExtractor={(e, i) => String(e.id ?? i)}
-        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
+        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 96 }}
         keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
@@ -127,6 +127,7 @@ export default function EmployeesScreen() {
         }
         ListFooterComponent={q.isFetchingNextPage ? <ActivityIndicator style={{ marginTop: 8 }} /> : undefined}
       />
+      {canAdd ? <Fab onPress={() => router.push('/admin/employees/new')} /> : null}
     </View>
   );
 }
