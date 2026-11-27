@@ -49,7 +49,7 @@ function Panel({ children, style }) {
 export default function HomeScreen() {
   const c = useColors();
   const router = useRouter();
-  const { hasModule } = useAccess();
+  const { hasModule, isOrgMode } = useAccess();
   const me = useSession((s) => s.me);
   const p = profileOf(me);
   // Web: an admin / HR account goes to the admin portal and never calls the self-service APIs.
@@ -57,9 +57,10 @@ export default function HomeScreen() {
   useEffect(() => {
     if (adminOnly && me?.id && landedAdminFor !== me.id) {
       landedAdminFor = me.id;
-      router.push('/admin');
+      // Web: Super Admin without a company lands on the organisation dashboard; everyone else on the admin one.
+      router.push(isOrgMode ? '/admin/org-dashboard' : '/admin');
     }
-  }, [adminOnly, me?.id, router]);
+  }, [adminOnly, isOrgMode, me?.id, router]);
 
   // Light status bar text over the emerald hero, only while this tab is on screen.
   useFocusEffect(
@@ -152,40 +153,75 @@ export default function HomeScreen() {
       show: hasModule('helpdesk'),
     },
   ].filter((a) => a.show);
-  const adminActions = [
-    { icon: 'stats-chart-outline', label: 'Admin dashboard', href: '/admin', tone: 'primary' },
-    { icon: 'people-outline', label: 'Employees', href: '/admin/employees', tone: 'info', show: hasModule('employee') },
-    {
-      icon: 'calendar-number-outline',
-      label: 'Attendance',
-      href: '/admin/attendance',
-      tone: 'orange',
-      show: hasModule('attendance'),
-    },
-    {
-      icon: 'checkmark-done-outline',
-      label: 'Leave approvals',
-      href: '/leave/approvals',
-      tone: 'violet',
-      show: hasModule('leave'),
-    },
-    { icon: 'wallet-outline', label: 'Payroll', href: '/admin/payroll-runs', tone: 'gold', show: hasModule('payroll') },
-    { icon: 'layers-outline', label: 'Masters', href: '/admin/masters', tone: 'warning' },
-    {
-      icon: 'shield-checkmark-outline',
-      label: 'Roles',
-      href: '/admin/roles',
-      tone: 'danger',
-      show: hasModule('employee'),
-    },
-    {
-      icon: 'clipboard-outline',
-      label: 'Compliance',
-      href: '/admin/compliance',
-      tone: 'info',
-      show: hasModule('attendance'),
-    },
-  ].filter((a) => a.show !== false);
+  const orgActions = [
+    { icon: 'globe-outline', label: 'Org dashboard', href: '/admin/org-dashboard', tone: 'primary' },
+    { icon: 'business-outline', label: 'Companies', href: '/admin/companies', tone: 'info' },
+    { icon: 'ribbon-outline', label: 'Org profile', href: '/admin/organisation', tone: 'gold' },
+    { icon: 'swap-vertical-outline', label: 'Pick company', href: '/company-picker', tone: 'violet' },
+  ];
+  const adminActions = isOrgMode
+    ? orgActions
+    : [
+        { icon: 'stats-chart-outline', label: 'Admin dashboard', href: '/admin', tone: 'primary' },
+        {
+          icon: 'people-outline',
+          label: 'Employees',
+          href: '/admin/employees',
+          tone: 'info',
+          show: hasModule('employee'),
+        },
+        {
+          icon: 'calendar-number-outline',
+          label: 'Attendance',
+          href: '/admin/attendance',
+          tone: 'orange',
+          show: hasModule('attendance'),
+        },
+        {
+          icon: 'checkmark-done-outline',
+          label: 'Leave approvals',
+          href: '/leave/approvals',
+          tone: 'violet',
+          show: hasModule('leave'),
+        },
+        {
+          icon: 'wallet-outline',
+          label: 'Payroll',
+          href: '/admin/payroll-runs',
+          tone: 'gold',
+          show: hasModule('payroll'),
+        },
+        { icon: 'layers-outline', label: 'Masters', href: '/admin/masters', tone: 'warning' },
+        {
+          icon: 'shield-checkmark-outline',
+          label: 'Roles',
+          href: '/admin/roles',
+          tone: 'danger',
+          show: hasModule('employee'),
+        },
+        {
+          icon: 'clipboard-outline',
+          label: 'Compliance',
+          href: '/admin/compliance',
+          tone: 'info',
+          show: hasModule('attendance'),
+        },
+      ].filter((a) => a.show !== false);
+  const adminHome = isOrgMode
+    ? {
+        icon: 'globe-outline',
+        title: 'Organisation workspace',
+        text: 'Pick a company to manage its people, attendance, leave and payroll.',
+        button: 'Open organisation dashboard',
+        href: '/admin/org-dashboard',
+      }
+    : {
+        icon: 'business-outline',
+        title: 'Admin workspace',
+        text: 'Manage people, attendance, leave and payroll.',
+        button: 'Open admin dashboard',
+        href: '/admin',
+      };
 
   return (
     <View style={{ flex: 1, backgroundColor: c.background }}>
@@ -205,14 +241,14 @@ export default function HomeScreen() {
               <Panel style={{ marginTop: -40 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <View style={[styles.bigIcon, { backgroundColor: c.primarySoft }]}>
-                    <Ionicons name="business-outline" size={24} color={c.primary} />
+                    <Ionicons name={adminHome.icon} size={24} color={c.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: c.text, fontSize: 16, fontWeight: '800' }}>Admin workspace</Text>
-                    <Muted style={{ fontSize: 13 }}>Manage people, attendance, leave and payroll.</Muted>
+                    <Text style={{ color: c.text, fontSize: 16, fontWeight: '800' }}>{adminHome.title}</Text>
+                    <Muted style={{ fontSize: 13 }}>{adminHome.text}</Muted>
                   </View>
                 </View>
-                <Button title="Open admin dashboard" onPress={() => router.push('/admin')} />
+                <Button title={adminHome.button} onPress={() => router.push(adminHome.href)} />
               </Panel>
               <CompanySwitcherRow />
               <SectionHeader title="Quick actions" />

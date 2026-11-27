@@ -6,16 +6,18 @@ import { profileOf } from '@/store/session';
  * Menu tab. Each item is shown only when its backend module is on and the user may use it (same gates as the web).
  */
 export function useMenuGroups() {
-  const { me, isOrgUser, isSuperAdmin, hasModule, can } = useAccess();
+  const { me, isOrgUser, isSuperAdmin, isOrgMode, hasModule, can } = useAccess();
   // Admin / HR account without a linked employee record: self-service screens answer 403 "No employee profile".
   const self = !(isOrgUser && !profileOf(me).employee_id);
+  // Super Admin before picking a company (web isOrgMode): only the organisation-level screens.
+  const company = isOrgUser && !isOrgMode;
   const att = hasModule('attendance');
   const groups = [
     {
       key: 'overview',
       label: 'Overview',
       items: [
-        { icon: 'grid-outline', label: 'Dashboard', href: '/' },
+        { icon: 'grid-outline', label: 'Dashboard', href: isOrgMode ? '/admin/org-dashboard' : '/' },
         { icon: 'person-circle-outline', label: 'My Profile', href: '/profile' },
       ],
     },
@@ -74,7 +76,7 @@ export function useMenuGroups() {
     {
       key: 'admin',
       label: 'Administration',
-      show: isOrgUser,
+      show: company,
       items: [
         { icon: 'stats-chart-outline', label: 'Admin dashboard', href: '/admin' },
         { icon: 'layers-outline', label: 'Master data', href: '/admin/masters' },
@@ -89,7 +91,7 @@ export function useMenuGroups() {
     {
       key: 'people',
       label: 'People',
-      show: isOrgUser,
+      show: company,
       items: [
         { icon: 'people-outline', label: 'Employees', href: '/admin/employees', show: hasModule('employee') },
         {
@@ -110,7 +112,7 @@ export function useMenuGroups() {
     {
       key: 'time-admin',
       label: 'Time & Leave',
-      show: isOrgUser,
+      show: company,
       items: [
         { icon: 'calendar-number-outline', label: 'Attendance & shifts', href: '/admin/attendance', show: att },
         { icon: 'bar-chart-outline', label: 'Attendance reports', href: '/admin/attendance-reports', show: att },
@@ -133,7 +135,7 @@ export function useMenuGroups() {
     {
       key: 'payroll-admin',
       label: 'Payroll & Finance',
-      show: isOrgUser && hasModule('payroll'),
+      show: company && hasModule('payroll'),
       items: [
         { icon: 'wallet-outline', label: 'Payroll runs', href: '/admin/payroll-runs' },
         { icon: 'add-circle-outline', label: 'Payroll adjustments', href: '/admin/payroll/adjustments' },
@@ -147,10 +149,18 @@ export function useMenuGroups() {
       label: 'Organisation',
       show: isSuperAdmin,
       items: [
-        { icon: 'globe-outline', label: 'Organisation dashboard', href: '/admin/org-dashboard' },
-        { icon: 'business-outline', label: 'Companies & modules', href: '/admin/companies' },
+        // In org mode the Overview "Dashboard" already opens it.
+        { icon: 'globe-outline', label: 'Organisation dashboard', href: '/admin/org-dashboard', show: !isOrgMode },
+        // Web ORG_MODE_GROUPS: Dashboard, Companies, Company Modules, Reports & Analytics, Organisation Profile.
+        { icon: 'business-outline', label: 'Companies', href: '/admin/companies' },
+        { icon: 'cube-outline', label: 'Company modules', href: '/admin/companies/modules' },
+        { icon: 'bar-chart-outline', label: 'Reports & analytics', href: '/admin/org-reports' },
         { icon: 'ribbon-outline', label: 'Organisation profile', href: '/admin/organisation' },
-        { icon: 'swap-vertical-outline', label: 'Switch company', href: '/company-picker' },
+        {
+          icon: 'swap-vertical-outline',
+          label: isOrgMode ? 'Pick a company' : 'Switch company',
+          href: '/company-picker',
+        },
       ],
     },
   ];

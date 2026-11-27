@@ -50,14 +50,20 @@ export function isOrgUser(me) {
 }
 export function useAccess() {
   const me = useSession((s) => s.me);
+  const companyId = useSession((s) => s.scopeCompanyId);
+  const superAdmin = isSuperAdmin(me);
+  // Web isOrgMode: a Super Admin with no company picked works at organisation level only — every company screen
+  // would answer 400 "Select a company", so no company module counts as available until one is picked.
+  const orgMode = superAdmin && !companyId;
   return {
     me,
     role: roleOf(me),
     isAdmin: isAdminRole(roleOf(me)),
-    isSuperAdmin: isSuperAdmin(me),
+    isSuperAdmin: superAdmin,
+    isOrgMode: orgMode,
     isOrgUser: isOrgUser(me),
     can: (permission) => canDo(me, permission),
-    hasModule: (...modules) => hasModule(me, ...modules),
+    hasModule: (...modules) => (orgMode ? false : hasModule(me, ...modules)),
   };
 }
 /** Super Admin company scope (web: CompanySwitcher). `needsCompany` = Super Admin with no company picked. */

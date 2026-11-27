@@ -9,7 +9,7 @@ import { useMenuGroups } from '@/features/nav/menu';
 import { useAccess } from '@/lib/access';
 import { CompanyScopeNotice } from '@/lib/CompanyScopeNotice';
 import { displayName, useSession } from '@/store/session';
-import { Muted } from '@/ui/components';
+import { Button, Muted } from '@/ui/components';
 import { Hero, Pill, Progress, QuickAction, SectionHeader, StatTile } from '@/ui/dashboard';
 import { toISODate } from '@/ui/kit';
 import { useColors } from '@/ui/theme';
@@ -38,7 +38,7 @@ function Panel({ children, style }) {
 export default function AdminDashboard() {
   const c = useColors();
   const router = useRouter();
-  const { hasModule, role } = useAccess();
+  const { hasModule, role, isOrgMode } = useAccess();
   const me = useSession((s) => s.me);
   const companyName = useSession((s) => s.scopeCompanyName);
   const groups = useMenuGroups().filter((g) => ADMIN_GROUPS.includes(g.key));
@@ -106,10 +106,31 @@ export default function AdminDashboard() {
           {/* Today at a glance — overlaps the hero */}
           <Panel style={{ marginTop: -40 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={{ color: c.text, fontSize: 16, fontWeight: '800' }}>Today at a glance</Text>
+              <Text style={{ color: c.text, fontSize: 16, fontWeight: '800' }}>
+                {isOrgMode ? 'Organisation' : 'Today at a glance'}
+              </Text>
               {a?.percent != null ? <Pill label={`${a.percent}% present`} tone="primary" icon="trending-up" /> : null}
             </View>
-            {showAttendance ? (
+            {isOrgMode ? (
+              <>
+                <Muted>
+                  You are at organisation level. Pick a company to see its attendance, people and payroll — or open the
+                  organisation dashboard.
+                </Muted>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <View style={{ flex: 1 }}>
+                    <Button title="Pick a company" onPress={() => router.push('/company-picker')} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Button
+                      title="Org dashboard"
+                      variant="outline"
+                      onPress={() => router.push('/admin/org-dashboard')}
+                    />
+                  </View>
+                </View>
+              </>
+            ) : showAttendance ? (
               <>
                 <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6 }}>
                   <Text style={{ color: c.text, fontSize: 34, fontWeight: '800' }}>{a?.present ?? '—'}</Text>
@@ -126,7 +147,9 @@ export default function AdminDashboard() {
             )}
           </Panel>
 
-          <CompanyScopeNotice message="Pick a company to see its figures — without one the cards below may be empty." />
+          {isOrgMode ? null : (
+            <CompanyScopeNotice message="Pick a company to see its figures — without one the cards below may be empty." />
+          )}
 
           {/* KPIs */}
           <View style={styles.tiles}>
