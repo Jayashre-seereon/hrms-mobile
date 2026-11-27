@@ -1,4 +1,6 @@
 import { useColorScheme } from 'react-native';
+import { useSession } from '@/store/session';
+import { companyBranding, darken, forDarkMode, tint } from './brand';
 /**
  * Seereon HRMS brand — same palette as the web app (hrms-frontenddev/src/globals.css):
  * emerald primary, dark-emerald sidebar / gradient end, gold accent, emerald-tinted neutrals.
@@ -75,6 +77,34 @@ const dark = {
   sidebarActiveText: '#1A1608',
   gradient: ['#245A47', '#0B3C2B'],
 };
+/** Palette with the company's colour applied (web Appearance.jsx: primary + darken(primary, 0.12); dark mode lifted). */
+const cache = new Map();
+function branded(base, color, scheme) {
+  const key = `${scheme}|${color}`;
+  if (cache.has(key)) return cache.get(key);
+  const darkHex = darken(color, 0.12);
+  const primary = scheme === 'dark' ? forDarkMode(color, 0.7) : color;
+  const primaryDark = scheme === 'dark' ? forDarkMode(darkHex, 0.3) : darkHex;
+  const out = {
+    ...base,
+    primary,
+    primaryDark,
+    primarySoft: scheme === 'dark' ? forDarkMode(color, 0.16) : tint(color, 0.94),
+    success: primary,
+    successSoft: scheme === 'dark' ? forDarkMode(color, 0.16) : tint(color, 0.94),
+    sidebar: scheme === 'dark' ? base.sidebar : darkHex,
+    sidebarAccent: scheme === 'dark' ? base.sidebarAccent : darken(darkHex, 0.08),
+    sidebarBorder: scheme === 'dark' ? base.sidebarBorder : darken(darkHex, -0.06),
+    gradient: scheme === 'dark' ? [forDarkMode(color, 0.3), primaryDark] : [color, darkHex],
+  };
+  cache.set(key, out);
+  return out;
+}
+
 export function useColors() {
-  return useColorScheme() === 'dark' ? dark : light;
+  const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
+  // Company colour from /me (null for Super Admin / when signed out → Seereon emerald).
+  const color = useSession((s) => companyBranding(s.me).color);
+  const base = scheme === 'dark' ? dark : light;
+  return color ? branded(base, color, scheme) : base;
 }

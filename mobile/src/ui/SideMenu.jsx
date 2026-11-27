@@ -1,11 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { usePathname, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { create } from 'zustand';
 import { useMenuGroups } from '@/features/nav/menu';
 import { displayName, profileOf, useSession } from '@/store/session';
+import { companyBranding } from './brand';
 import { initials } from './format';
 import { useColors } from './theme';
 
@@ -47,7 +48,11 @@ export function SideMenu() {
   const hide = useSideMenu((s) => s.hide);
   const me = useSession((s) => s.me);
   const signOut = useSession((s) => s.signOut);
-  const companyName = useSession((s) => s.scopeCompanyName);
+  const scopeCompanyName = useSession((s) => s.scopeCompanyName);
+  // Company logo + name inside a company (web sidebar brand block); Super Admin keeps the product mark.
+  const brand = companyBranding(me);
+  const companyName = brand.name ?? scopeCompanyName;
+  const [logoFailed, setLogoFailed] = useState(false);
   const groups = useMenuGroups();
   const [closed, setClosed] = useState({});
   const [visible, setVisible] = useState(false);
@@ -97,12 +102,27 @@ export function SideMenu() {
           {/* Brand + user */}
           <View style={[styles.head, { borderBottomColor: c.sidebarBorder }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <View style={[styles.logo, { backgroundColor: c.sidebarActive }]}>
-                <Text style={{ color: c.sidebarActiveText, fontWeight: '800', fontSize: 16 }}>S</Text>
-              </View>
+              {brand.logo && !logoFailed ? (
+                <Image
+                  source={{ uri: brand.logo }}
+                  onError={() => setLogoFailed(true)}
+                  resizeMode="contain"
+                  style={[styles.logo, { backgroundColor: '#FFFFFF' }]}
+                />
+              ) : (
+                <View style={[styles.logo, { backgroundColor: c.sidebarActive }]}>
+                  <Text style={{ color: c.sidebarActiveText, fontWeight: '800', fontSize: 16 }}>
+                    {(brand.name ?? 'S').charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
               <View style={{ flex: 1 }}>
-                <Text style={{ color: c.sidebarText, fontWeight: '800', fontSize: 17 }}>Seereon HRMS</Text>
-                {companyName ? (
+                <Text numberOfLines={1} style={{ color: c.sidebarText, fontWeight: '800', fontSize: 17 }}>
+                  {brand.name ?? 'Seereon HRMS'}
+                </Text>
+                {brand.name ? (
+                  <Text style={{ color: c.sidebarMuted, fontSize: 12 }}>Seereon HRMS</Text>
+                ) : companyName ? (
                   <Text numberOfLines={1} style={{ color: c.sidebarMuted, fontSize: 12 }}>
                     {companyName}
                   </Text>
